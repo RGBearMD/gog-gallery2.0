@@ -18,7 +18,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(false);
-  const [DEV_MOCK, setDEV_MOCK] = useState(true);
+  const [DEV_MOCK, setDEV_MOCK] = useState(false);
 
   {/* attiva disattiva mockup */ }
   const hasGames = games.length > 0;
