@@ -1,69 +1,53 @@
-import { useState } from "react";
-
-export default function GameIndex({ games, onSelect }) {
-    const [open, setOpen] = useState(false);
-
+export default function GameIndex({ games, onSelect, isOpen, onClose }) {
     return (
         <>
-            {/* BUTTON */}
-            <button
-                onClick={() => setOpen(true)}
-                className="bg-zinc-800 px-3 py-2 rounded hover:bg-zinc-700 transition"
-            >
-                ☰ Index ({games.length})
-            </button>
+            {/* SIDEBAR DESKTOP (Fissa a sinistra, nascosta su mobile) */}
+            <aside className="hidden md:flex flex-col w-80 h-[calc(100vh-73px)] sticky top-[73px] bg-zinc-950 border-r border-zinc-800 overflow-hidden flex-shrink-0">
+                <div className="p-4 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
+                    <span className="text-xs font-bold tracking-wider text-zinc-400 uppercase">La tua Libreria ({games.length})</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
+                    <GameList xml={games} onSelect={onSelect} />
+                </div>
+            </aside>
 
-            {/* OVERLAY */}
-            {open && (
-                <div className="fixed inset-0 z-50 bg-black/70 flex">
+            {/* DRAWER MOBILE (A comparsa tramite stato del parent) */}
+            {isOpen && (
+                <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
+                    {/* Backdrop */}
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onClose} />
 
-                    {/* SIDEBAR */}
-                    <div className="w-80 max-w-[85vw] bg-zinc-900 border-r border-zinc-800 p-4 overflow-y-auto">
-
-                        {/* HEADER */}
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-bold text-zinc-300">
-                                Your Games
-                            </h2>
-
-                            <button
-                                onClick={() => setOpen(false)}
-                                className="text-zinc-400 hover:text-white"
-                            >
-                                ✕
-                            </button>
+                    {/* Pannello Drawer */}
+                    <div className="relative w-80 max-w-[85vw] h-full bg-zinc-950 border-r border-zinc-800 flex flex-col z-10 animate-slide-right">
+                        <div className="p-4 border-b border-zinc-900 flex items-center justify-between">
+                            <span className="text-sm font-bold text-zinc-200">Giochi Disponibili ({games.length})</span>
+                            <button onClick={onClose} className="text-zinc-400 p-1 hover:text-white">✕</button>
                         </div>
-
-                        {/* LIST */}
-                        <div className="space-y-1">
-                            {games.map((g, i) => (
-                                <div
-                                    key={g.id}
-                                    onClick={() => {
-                                        onSelect(g);
-                                        setOpen(false);
-                                    }}
-                                    className="text-sm px-2 py-2 rounded hover:bg-zinc-800 cursor-pointer flex gap-2"
-                                >
-                                    <span className="text-zinc-500 w-6">
-                                        {i + 1}
-                                    </span>
-                                    <span className="truncate">
-                                        {g.title}
-                                    </span>
-                                </div>
-                            ))}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+                            <GameList xml={games} onSelect={onSelect} closeDrawer={onClose} />
                         </div>
-
                     </div>
-
-                    {/* BACKDROP */}
-                    <div
-                        className="flex-1"
-                        onClick={() => setOpen(false)}
-                    />
                 </div>
             )}
         </>
     );
+}
+
+// Sub-componente interno per evitare duplicazione di logica di rendering
+function GameList({ xml: games, onSelect, closeDrawer }) {
+    return games.map((g, i) => (
+        <button
+            key={g.id}
+            onClick={() => {
+                onSelect(g);
+                if (closeDrawer) closeDrawer();
+            }}
+            className="w-full text-left text-sm px-3 py-2.5 rounded-md hover:bg-zinc-800/60 text-zinc-300 hover:text-white cursor-pointer flex items-center gap-3 transition group border border-transparent hover:border-zinc-800"
+        >
+            <span className="text-zinc-600 font-mono text-xs w-5 text-right group-hover:text-purple-400 transition">
+                {String(i + 1).padStart(2, '0')}
+            </span>
+            <span className="truncate font-medium">{g.title}</span>
+        </button>
+    ));
 }
