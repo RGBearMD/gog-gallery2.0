@@ -1,5 +1,4 @@
 export async function getAllGames(username) {
-
     const first = await fetch(
         `/.netlify/functions/gog?user=${username}&page=1`
     );
@@ -49,6 +48,7 @@ export async function getAllGames(username) {
                 item.stats?.[Object.keys(item.stats)[0]]?.playtime ?? 0,
             lastSession:
                 item.stats?.[Object.keys(item.stats)[0]]?.lastSession,
+            screenshots: []
         }))
     );
 }
@@ -58,5 +58,17 @@ export async function getGameScreenshots(slug) {
         `/.netlify/functions/gameDetails?slug=${encodeURIComponent(slug)}`
     );
 
-    return await res.json();
+    const data = await res.json();
+
+    const raw =
+        data?.screenshots ||
+        data?._embedded?.screenshots ||
+        data?.data?.screenshots ||
+        [];
+
+    return {
+        screenshots: raw
+            .map((s) => (typeof s === "string" ? s : s?.url || s?.image || s?.src))
+            .filter(Boolean),
+    };
 }

@@ -4,19 +4,67 @@ export default function GameModal({ game, onClose }) {
     const [activeScreenshot, setActiveScreenshot] = useState(null);
 
     // Reset del lightbox alla chiusura o cambio gioco
+
     useEffect(() => {
-        setActiveScreenshot(null);
+        if (!game) return;
+
+        async function load() {
+            try {
+                const res = await fetch(
+                    `/.netlify/functions/gameDetails?slug=${encodeURIComponent(game.url)}`
+                );
+                const data = await res.json();
+
+                const shots =
+                    data?.screenshots ||
+                    data?._embedded?.screenshots ||
+                    [];
+
+                setScreenshots(
+                    shots.map(s => typeof s === "string" ? s : s.url)
+                );
+            } catch (e) {
+                console.error("Screenshot load error", e);
+                setScreenshots([game.cover]);
+            }
+        }
+
+        load();
     }, [game]);
 
     if (!game) return null;
+    console.log("GAME MODAL DATA:", game);
 
     // Fallback degli screenshot: se l'API non li passa, generiamo dei placeholder intelligenti
-    // o usiamo la cover espansa come sfondo hero.
-    const screenshots = game.screenshots || [
-        game.cover,
-        // Esempio di fallback dinamico basato su un servizio image proxy se necessario
-        `https://images.igdb.com/igdb/image/upload/t_1080p/co1r77.jpg`
-    ];
+    const [screenshots, setScreenshots] = useState([]);
+
+    useEffect(() => {
+        if (!game) return;
+
+        async function load() {
+            try {
+                const res = await fetch(
+                    `/.netlify/functions/gameDetails?slug=${encodeURIComponent(game.url)}`
+                );
+
+                const data = await res.json();
+
+                const shots =
+                    data?.screenshots ||
+                    data?._embedded?.screenshots ||
+                    [];
+
+                setScreenshots(
+                    shots.map(s => typeof s === "string" ? s : s.url)
+                );
+            } catch (e) {
+                console.error("Screenshot error", e);
+                setScreenshots([game.cover]);
+            }
+        }
+
+        load();
+    }, [game]);
 
     return (
         <>
