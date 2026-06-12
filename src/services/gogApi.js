@@ -1,9 +1,20 @@
 export async function getAllGames(username) {
+
     const first = await fetch(
         `/.netlify/functions/gog?user=${username}&page=1`
     );
 
-    const firstData = await first.json();
+    const text = await first.text();
+
+    let firstData;
+
+    try {
+        firstData = JSON.parse(text);
+    } catch (e) {
+        console.error("Risposta non JSON:", text);
+        throw new Error("API non valida / function rotta");
+    }
+
     const pages = firstData.pages;
 
     const queue = Array.from({ length: pages }, (_, i) => i + 1);
@@ -40,4 +51,12 @@ export async function getAllGames(username) {
                 item.stats?.[Object.keys(item.stats)[0]]?.lastSession,
         }))
     );
+}
+
+export async function getGameScreenshots(slug) {
+    const res = await fetch(
+        `/.netlify/functions/gameDetails?slug=${encodeURIComponent(slug)}`
+    );
+
+    return await res.json();
 }

@@ -5,11 +5,13 @@ export default function GameGrid({ games, onSelect }) {
                 <div
                     key={g.id}
                     onClick={() => onSelect?.(g)}
-                    className="cursor-pointer hover:scale-105 transition"
+                    className="cursor-pointer hover:scale-[1.02] transition-transform"
                 >
                     <img
                         src={g.cover}
-                        className="rounded shadow-lg"
+                        loading="lazy"
+                        decoding="async"
+                        className="rounded shadow-lg aspect-[3/4] object-cover bg-zinc-800"
                     />
                     <p className="text-xs mt-1 truncate">{g.title}</p>
                 </div>

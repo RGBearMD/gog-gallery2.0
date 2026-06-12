@@ -7,6 +7,7 @@ import GameIndex from "./components/GameIndex";
 function App() {
   const [username, setUsername] = useState("");
   const [games, setGames] = useState([]);
+  const hasGames = games.length > 0;
   const [loading, setLoading] = useState(false);
 
   const [selectedGame, setSelectedGame] = useState(null);
@@ -38,35 +39,49 @@ function App() {
       </div>
 
       <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex gap-2 mb-6">
-          <input
-            className="flex-1 p-2 rounded text-black"
-            placeholder="Username GOG"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
+        <div className="text-center py-16">
+          <h1 className="text-3xl font-bold mb-2">
+            Create your personal gallery
+          </h1>
 
-          <button
-            onClick={handleImport}
-            className="bg-blue-600 px-4 rounded"
-          >
-            {loading ? "Carico..." : "Importa"}
-          </button>
+          <p className="text-zinc-400 mb-6">
+            Import your GOG library and explore your games
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-2 max-w-md mx-auto">
+            <input
+              className="p-3 rounded bg-zinc-800 text-white border border-zinc-700"
+              placeholder="GOG username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+
+            <button
+              onClick={handleImport}
+              className="bg-blue-600 px-4 py-2 rounded"
+            >
+              {loading ? "Loading..." : "Import"}
+            </button>
+          </div>
         </div>
 
-        <GameIndex games={games} onSelect={setSelectedGame} />
+        {hasGames && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <GameIndex games={games} onSelect={setSelectedGame} />
 
-        <button
-          onClick={pickRandomGame}
-          className="bg-purple-600 px-4 py-2 rounded mb-4"
-        >
-          🎲 Random Game
-        </button>
+              <button
+                onClick={pickRandomGame}
+                className="bg-purple-600 px-4 py-2 rounded"
+              >
+                🎲 Random Game
+              </button>
+            </div>
 
-        <GameGrid
-          games={games}
-          onSelect={setSelectedGame}
-        />
+            <GameGrid games={games} onSelect={setSelectedGame} />
+          </>
+        )}
+
         <GameModal
           game={selectedGame}
           onClose={() => setSelectedGame(null)}
