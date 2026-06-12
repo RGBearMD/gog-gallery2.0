@@ -5,43 +5,59 @@ export default function GameIndex({ games, onSelect }) {
 
     return (
         <>
-            {/* BUTTON HAMBURGER */}
+            {/* BUTTON */}
             <button
                 onClick={() => setOpen(true)}
-                className="mb-3 bg-zinc-800 px-3 py-2 rounded"
+                className="bg-zinc-800 px-3 py-2 rounded hover:bg-zinc-700 transition"
             >
                 ☰ Index ({games.length})
             </button>
 
-            {/* SIDEBAR */}
+            {/* OVERLAY */}
             {open && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex">
+                <div className="fixed inset-0 z-50 bg-black/70 flex">
 
-                    <div className="w-80 bg-zinc-900 p-4 overflow-y-auto">
+                    {/* SIDEBAR */}
+                    <div className="w-80 max-w-[85vw] bg-zinc-900 border-r border-zinc-800 p-4 overflow-y-auto">
 
-                        <button
-                            onClick={() => setOpen(false)}
-                            className="mb-4 text-white"
-                        >
-                            ✕ Close
-                        </button>
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-sm font-bold text-zinc-300">
+                                Your Games
+                            </h2>
 
-                        {games.map((g, i) => (
-                            <div
-                                key={g.id}
-                                onClick={() => {
-                                    onSelect(g);
-                                    setOpen(false);
-                                }}
-                                className="text-sm p-2 hover:bg-zinc-800 cursor-pointer"
+                            <button
+                                onClick={() => setOpen(false)}
+                                className="text-zinc-400 hover:text-white"
                             >
-                                {i + 1}. {g.title}
-                            </div>
-                        ))}
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* LIST */}
+                        <div className="space-y-1">
+                            {games.map((g, i) => (
+                                <div
+                                    key={g.id}
+                                    onClick={() => {
+                                        onSelect(g);
+                                        setOpen(false);
+                                    }}
+                                    className="text-sm px-2 py-2 rounded hover:bg-zinc-800 cursor-pointer flex gap-2"
+                                >
+                                    <span className="text-zinc-500 w-6">
+                                        {i + 1}
+                                    </span>
+                                    <span className="truncate">
+                                        {g.title}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
 
                     </div>
 
-                    {/* overlay click close */}
+                    {/* BACKDROP */}
                     <div
                         className="flex-1"
                         onClick={() => setOpen(false)}
