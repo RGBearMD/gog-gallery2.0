@@ -39,21 +39,13 @@ export default function GameModal({ game, onClose }) {
     onClick={(e) => e.stopPropagation()}
 >
 
-                    {/* HERO BACKGROUND BANNER */}
-                    <div className="relative h-64 md:h-80 w-full overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent z-10" />
-                        <img
-                            src={screenshots[0]}
-                            alt=""
-                            className="w-full h-full object-cover blur-sm opacity-40 scale-105"
-                        />
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-zinc-800 text-white w-10 h-10 rounded-full flex items-center justify-center transition"
-                        >
-                            ✕
-                        </button>
-                    </div>
+{/* Pulsante chiusura */}
+<button
+    onClick={onClose}
+    className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-zinc-800 text-white w-10 h-10 rounded-full flex items-center justify-center transition"
+>
+    ✕
+</button>
 
                             {/*
 <div className="flex flex-wrap gap-4 justify-center md:justify-start text-sm text-zinc-400 mb-6">

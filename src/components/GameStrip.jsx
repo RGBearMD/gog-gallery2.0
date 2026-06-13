@@ -1,4 +1,9 @@
 export default function GameStrip({ games, onSelect }) {
+
+    games.slice(0, 3).forEach((g) => {
+        console.log(g.title, g.screenshots);
+    });
+    
     return (
         <div className="flex flex-col gap-3">
             {games.map((game) => (
