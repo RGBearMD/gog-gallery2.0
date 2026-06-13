@@ -15,33 +15,45 @@ export default function PublicProfileHelpModal({
                     e.stopPropagation()
                 }
             >
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-white">
-                        Come rendere pubblica la tua libreria GOG
-                    </h2>
+                <div className="flex items-start justify-between gap-4 mb-6">
+    <h2 className="text-2xl md:text-3xl font-black text-white">
+        Non trovi la tua libreria?
+    </h2>
 
-                    <button
-                        onClick={onClose}
-                        className="text-zinc-400 hover:text-white"
-                    >
-                        ✕
-                    </button>
-                </div>
+    <button
+        onClick={onClose}
+        className="text-zinc-400 hover:text-white text-xl"
+    >
+        ✕
+    </button>
+</div>
 
                 <div className="space-y-5 text-zinc-300">
-                    <div className="bg-zinc-800/50 rounded-xl p-4">
-                        <p>
-                            Per generare la tua
-                            Gallery è necessario
-                            che il profilo GOG sia
-                            visibile.
-                        </p>
+                    <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/20 rounded-2xl p-5">
+                        <p className="text-white font-semibold text-lg">
+    Your Games Gallery utilizza esclusivamente
+    i dati pubblici del tuo profilo GOG.
+</p>
 
-                        <p className="mt-2 text-sm text-zinc-400">
-                            Non servono password,
-                            autorizzazioni o accessi
-                            al tuo account.
-                        </p>
+<p className="mt-3 text-zinc-300">
+    Se la tua libreria è privata non possiamo
+    leggere i giochi e la Gallery non potrà
+    essere generata.
+</p>
+
+<div className="mt-4 flex flex-wrap gap-2">
+    <span className="px-3 py-1 rounded-full bg-zinc-800 text-xs">
+        ✓ Nessuna password
+    </span>
+
+    <span className="px-3 py-1 rounded-full bg-zinc-800 text-xs">
+        ✓ Solo dati pubblici
+    </span>
+
+    <span className="px-3 py-1 rounded-full bg-zinc-800 text-xs">
+        ✓ Nessun accesso all'account
+    </span>
+</div>
                     </div>
 
                     <div>
