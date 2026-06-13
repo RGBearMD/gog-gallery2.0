@@ -9,20 +9,29 @@ export default async (req) => {
 
         const data = await res.json();
 
-        const screenshots = (data.screenshots || [])
-            .map((shot) => {
-                const best =
-                    shot.formatted_images?.find(
-                        img => img.formatter_name === "ggvgl_2x"
-                    ) ||
-                    shot.formatted_images?.find(
-                        img => img.formatter_name === "ggvgl"
-                    ) ||
-                    shot.formatted_images?.[0];
+        // Priorità alle immagini più leggere per ridurre
+// traffico dati e velocizzare il caricamento.
+const PRIORITY = [
+    "ggvgt",
+    "ggvgm",
+    "ggvgl",
+    "ggvgm_2x",
+    "ggvgl_2x"
+];
 
-                return best?.image_url;
-            })
-            .filter(Boolean);
+const screenshots = (data.screenshots || [])
+    .map((shot) => {
+        const best = PRIORITY
+            .map((format) =>
+                shot.formatted_images?.find(
+                    (img) => img.formatter_name === format
+                )
+            )
+            .find(Boolean);
+
+        return best?.image_url;
+    })
+    .filter(Boolean);
 
         return new Response(
             JSON.stringify({ screenshots }),
