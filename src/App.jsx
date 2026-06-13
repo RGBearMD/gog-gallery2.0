@@ -5,6 +5,7 @@ import GameModal from "./components/GameModal";
 import GameIndex from "./components/GameIndex";
 import { useEffect } from "react";
 import GameStrip from "./components/GameStrip";
+import PublicProfileHelpModal from "./components/PublicProfileHelpModal";
 
 const mockGames = [
   { id: "1", title: "Cyberpunk Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg", playtime: 120, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg"] },
@@ -21,6 +22,7 @@ function App() {
   const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(false);
   const [DEV_MOCK, setDEV_MOCK] = useState(false);
   const [viewMode, setViewMode] = useState("strip");
+  const [showHelp, setShowHelp] = useState(false);
 
   {/* attiva disattiva mockup */ }
   const hasGames = games.length > 0;
@@ -158,6 +160,15 @@ function App() {
                   {loading ? "Importazione..." : "Importa"}
                 </button>
               </div>
+              <div className="mt-4">
+  <button
+    type="button"
+    onClick={() => setShowHelp(true)}
+    className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+  >
+    Come rendere pubblico il profilo →
+  </button>
+</div>
             </div>
           ) : (
             /* Griglia Giochi Attiva */
@@ -187,6 +198,11 @@ function App() {
     key={selectedGame?.id}
     game={selectedGame}
     onClose={() => setSelectedGame(null)}
+/>
+
+<PublicProfileHelpModal
+    isOpen={showHelp}
+    onClose={() => setShowHelp(false)}
 />
     </div>
   );
