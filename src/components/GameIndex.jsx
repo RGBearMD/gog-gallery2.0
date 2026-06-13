@@ -25,14 +25,24 @@ export default function GameIndex({ games, onSelect, isOpen, onClose }) {
 }
 
 // Sub-componente interno per evitare duplicazione di logica di rendering
-function GameList({ xml: games, onSelect, closeDrawer }) {
+function GameList({ xml: games, closeDrawer }) {
     return games.map((g, i) => (
         <button
             key={g.id}
             onClick={() => {
-                onSelect(g);
-                if (closeDrawer) closeDrawer();
-            }}
+
+    // Cerca la card o strip del gioco
+    const element = document.getElementById(`game-${g.id}`);
+
+    if (element) {
+        element.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    }
+
+    if (closeDrawer) closeDrawer();
+}}
             className="w-full text-left text-sm px-3 py-2.5 rounded-md hover:bg-zinc-800/60 text-zinc-300 hover:text-white cursor-pointer flex items-center gap-3 transition group border border-transparent hover:border-zinc-800"
         >
             <span className="text-zinc-600 font-mono text-xs w-5 text-right group-hover:text-purple-400 transition">

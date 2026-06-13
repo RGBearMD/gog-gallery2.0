@@ -3,6 +3,7 @@ export default function GameGrid({ games, onSelect }) {
 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-1">           
             {games.map((game) => (
                 <div
+                    id={`game-${game.id}`}
                     key={game.id}
                     onClick={() => onSelect(game)}
                     className="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer group hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(147,51,234,0.15)] transition-all duration-300 flex flex-col"

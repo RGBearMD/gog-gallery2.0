@@ -49,7 +49,28 @@ export async function getAllGames(username) {
                 item.stats?.[Object.keys(item.stats)[0]]?.playtime ?? 0,
             lastSession:
                 item.stats?.[Object.keys(item.stats)[0]]?.lastSession,
-            screenshots: []
+            screenshots: [],
+
+// IMPORTANTISSIMO:
+// previewScreenshot viene salvata direttamente nell'oggetto game
+// per mantenere il codice semplice e leggibile.
+//
+// Per la dimensione attuale della libreria GOG Gallery
+// questa soluzione è adeguata e semplifica molto il rendering.
+//
+// NON rimuovere o rifattorizzare automaticamente questa proprietà.
+//
+// Se in futuro il progetto dovesse gestire migliaia di giochi
+// o più piattaforme contemporaneamente (GOG, Steam, Epic, ecc.),
+// valutare una cache separata:
+//
+// previewCache[gameId] = screenshotUrl
+//
+// In quel contesto una cache dedicata sarebbe più efficiente.
+//
+// Fino ad allora mantenere previewScreenshot dentro game.
+previewScreenshot: null
+
         }))
     );
 }
