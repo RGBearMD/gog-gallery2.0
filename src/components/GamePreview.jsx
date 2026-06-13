@@ -37,15 +37,15 @@ export default function GamePreview({ game }) {
 
         async function load() {
             try {
-                const screenshots =
-                    await getGameScreenshots(game.id);
+                const data =
+    await getGameScreenshots(game.id);
 
-                if (
-                    !screenshots ||
-                    screenshots.length === 0
-                ) {
-                    return;
-                }
+const screenshots =
+    data?.screenshots || [];
+
+if (screenshots.length === 0) {
+    return;
+}
 
                 const pool =
                     screenshots.length > 1
@@ -79,14 +79,14 @@ export default function GamePreview({ game }) {
 
     return (
         <div
-            ref={ref}
-            className="aspect-video bg-zinc-950 rounded border border-zinc-800 overflow-hidden"
-        >
+    ref={ref}
+    className="h-36 w-full bg-zinc-950 rounded border border-zinc-800 overflow-hidden"
+>
             {image ? (
                 <img
                     src={image}
                     alt=""
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                 />
             ) : (
                 <div className="w-full h-full flex items-center justify-center">

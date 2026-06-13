@@ -1,6 +1,6 @@
 export default function GameGrid({ games, onSelect }) {
     return (
-<div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-1">           
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-2">       
             {games.map((game) => (
                 <div
                     id={`game-${game.id}`}
@@ -26,7 +26,7 @@ export default function GameGrid({ games, onSelect }) {
 
                     {/* Info Card */}
                     <div className="p-3 flex-1 flex flex-col justify-between bg-zinc-900/50">
-                        <h3 className="font-bold text-sm text-zinc-200 line-clamp-1 group-hover:text-white transition-colors">
+                        <h3 className="font-bold text-sm text-zinc-200 line-clamp-2 group-hover:text-white transition-colors min-h-[3.5rem]">
                             {game.title}
                         </h3>
                         {/*

@@ -2,30 +2,53 @@ import { useState, useEffect } from "react";
 
 export default function GameModal({ game, onClose }) {
     const [activeScreenshot, setActiveScreenshot] = useState(null);
-    const [screenshots, setScreenshots] = useState([]);
+    const [screenshots, setScreenshots] = useState([game?.cover].filter(Boolean));
 
-    useEffect(() => {
-        if (!game) return;
+useEffect(() => {
+    if (!game) return;
 
-        async function load() {
-            try {
-                const res = await fetch(
-                    `/.netlify/functions/gameDetails?id=${game.id}`
+    let cancelled = false;
+
+    async function load() {
+        try {
+            const res = await fetch(
+                `/.netlify/functions/gameDetails?id=${game.id}`
+            );
+
+            const data = await res.json();
+
+            if (!cancelled) {
+                setScreenshots(
+                    (data.screenshots || []).slice(0, 6)
                 );
+            }
+        } catch (e) {
+            console.error("Screenshot error", e);
 
-                const data = await res.json();
-
-                setScreenshots(data.screenshots || []);
-            } catch (e) {
-                console.error("Screenshot error", e);
+            if (!cancelled) {
                 setScreenshots([game.cover]);
             }
         }
+    }
 
-        load();
-    }, [game]);
+    load();
+
+    return () => {
+        cancelled = true;
+    };
+}, [game]);
+
+useEffect(() => {
+    setActiveScreenshot(null);
+}, [game]);
 
     if (!game) return null;
+
+console.log(
+    "MODAL GAME:",
+    game.id,
+    game.title
+);
 
     return (
         <>
