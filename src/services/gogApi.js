@@ -43,6 +43,7 @@ export async function getAllGames(username) {
             id: item.game.id,
             title: item.game.title,
             cover: item.game.image,
+            rawGame: item.game,
             url: "https://www.gog.com" + item.game.url,
             playtime:
                 item.stats?.[Object.keys(item.stats)[0]]?.playtime ?? 0,

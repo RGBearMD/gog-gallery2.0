@@ -1,19 +1,10 @@
 export default function GameIndex({ games, onSelect, isOpen, onClose }) {
     return (
         <>
-            {/* SIDEBAR DESKTOP (Fissa a sinistra, nascosta su mobile) */}
-            <aside className="hidden md:flex flex-col w-80 h-[calc(100vh-73px)] sticky top-[73px] bg-zinc-950 border-r border-zinc-800 overflow-hidden flex-shrink-0">
-                <div className="p-4 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/20">
-                    <span className="text-xs font-bold tracking-wider text-zinc-400 uppercase">La tua Libreria ({games.length})</span>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-0.5 custom-scrollbar">
-                    <GameList xml={games} onSelect={onSelect} />
-                </div>
-            </aside>
 
             {/* DRAWER MOBILE (A comparsa tramite stato del parent) */}
             {isOpen && (
-                <div className="fixed inset-0 z-50 md:hidden flex animate-fade-in">
+                <div className="fixed inset-0 z-50 flex animate-fade-in">
                     {/* Backdrop */}
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onClose} />
 

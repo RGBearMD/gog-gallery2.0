@@ -5,6 +5,8 @@ import GameModal from "./components/GameModal";
 import GameIndex from "./components/GameIndex";
 import { useEffect } from "react";
 
+const [viewMode, setViewMode] = useState("strip");
+
 const mockGames = [
   { id: "1", title: "Cyberpunk Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg", playtime: 120, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg"] },
   { id: "2", title: "Witcher Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg", playtime: 84 },
@@ -26,6 +28,12 @@ function App() {
   useEffect(() => {
     console.log("GAMES:", games);
   }, [games]);
+
+  useEffect(() => {
+  if (games.length) {
+    console.log("FIRST GAME:", games[0]);
+  }
+}, [games]);
 
   function pickRandomGame() {
     if (!games.length) return;
@@ -57,14 +65,14 @@ function App() {
       <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4 md:px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Hamburger per Mobile */}
-          {hasGames && (
+          (
             <button
               onClick={() => setIsMobileIndexOpen(true)}
               className="md:hidden p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition"
             >
               ☰
             </button>
-          )}
+          )
           <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
             GOG Gallery
           </h1>
@@ -106,7 +114,12 @@ function App() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-2 bg-zinc-950 p-2 rounded-xl border border-zinc-800 shadow-xl">
-                <input
+                <input 
+                    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        handleImport();
+      }
+    }}
                   className="flex-1 p-3 rounded-lg bg-zinc-900 text-white placeholder-zinc-500 border border-transparent focus:border-zinc-700 outline-none text-sm transition"
                   placeholder="Inserisci username GOG"
                   value={username}
