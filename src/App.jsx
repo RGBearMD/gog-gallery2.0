@@ -4,6 +4,7 @@ import { getAllGames } from "./services/gogApi";
 import GameModal from "./components/GameModal";
 import GameIndex from "./components/GameIndex";
 import { useEffect } from "react";
+import GameStrip from "./components/GameStrip";
 
 const mockGames = [
   { id: "1", title: "Cyberpunk Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg", playtime: 120, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg"] },
@@ -67,10 +68,35 @@ function App() {
             
             <button
     onClick={() => setIsMobileIndexOpen(true)}
-              className="md:hidden p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition"
+              className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition"
             >
               ☰
             </button>
+                 {/* selezione vista */}
+     
+            <div className="flex gap-2">
+    <button
+        onClick={() => setViewMode("strip")}
+        className={`px-3 py-1 rounded text-sm ${
+            viewMode === "strip"
+                ? "bg-purple-600 text-white"
+                : "bg-zinc-800 text-zinc-400"
+        }`}
+    >
+        Strip
+    </button>
+
+    <button
+        onClick={() => setViewMode("grid")}
+        className={`px-3 py-1 rounded text-sm ${
+            viewMode === "grid"
+                ? "bg-purple-600 text-white"
+                : "bg-zinc-800 text-zinc-400"
+        }`}
+    >
+        Cards
+    </button>
+</div>
           
           <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
             GOG Gallery
@@ -140,7 +166,17 @@ function App() {
                 <h2 className="text-xl font-bold tracking-tight text-zinc-200">Tutti i Giochi</h2>
                 <span className="text-xs font-mono px-2 py-1 bg-zinc-800 rounded text-zinc-400">{games.length} elementi</span>
               </div>
-              <GameGrid games={games} onSelect={setSelectedGame} />
+              {viewMode === "strip" ? (
+    <GameStrip
+        games={games}
+        onSelect={setSelectedGame}
+    />
+) : (
+    <GameGrid
+        games={games}
+        onSelect={setSelectedGame}
+    />
+)}
             </div>
           )}
         </main>
