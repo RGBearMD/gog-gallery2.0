@@ -53,22 +53,10 @@ export async function getAllGames(username) {
     );
 }
 
-export async function getGameScreenshots(slug) {
+export async function getGameScreenshots(id) {
     const res = await fetch(
-        `/.netlify/functions/gameDetails?slug=${encodeURIComponent(slug)}`
+        `/.netlify/functions/gameDetails?id=${id}`
     );
 
-    const data = await res.json();
-
-    const raw =
-        data?.screenshots ||
-        data?._embedded?.screenshots ||
-        data?.data?.screenshots ||
-        [];
-
-    return {
-        screenshots: raw
-            .map((s) => (typeof s === "string" ? s : s?.url || s?.image || s?.src))
-            .filter(Boolean),
-    };
+    return await res.json();
 }

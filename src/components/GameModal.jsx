@@ -2,49 +2,19 @@ import { useState, useEffect } from "react";
 
 export default function GameModal({ game, onClose }) {
     const [activeScreenshot, setActiveScreenshot] = useState(null);
-
-    // Reset del lightbox alla chiusura o cambio gioco
-
-    useEffect(() => {
-        if (!game) return;
-
-        async function load() {
-            try {
-                const res = await fetch(
-                    `/.netlify/functions/gameDetails?slug=${encodeURIComponent(game.url)}`
-                );
-                const data = await res.json();
-
-                const shots =
-                    data?.screenshots ||
-                    data?._embedded?.screenshots ||
-                    [];
-
-                setScreenshots(
-                    shots.map(s => typeof s === "string" ? s : s.url)
-                );
-            } catch (e) {
-                console.error("Screenshot load error", e);
-                setScreenshots([game.cover]);
-            }
-        }
-
-        load();
-    }, [game]);
+    // Fallback degli screenshot: se l'API non li passa, generiamo dei placeholder intelligenti
+    const [screenshots, setScreenshots] = useState([]);
 
     if (!game) return null;
     console.log("GAME MODAL DATA:", game);
 
-    // Fallback degli screenshot: se l'API non li passa, generiamo dei placeholder intelligenti
-    const [screenshots, setScreenshots] = useState([]);
-
     useEffect(() => {
         if (!game) return;
 
         async function load() {
             try {
                 const res = await fetch(
-                    `/.netlify/functions/gameDetails?slug=${encodeURIComponent(game.url)}`
+                    `/.netlify/functions/gameDetails?id=${game.id}`
                 );
 
                 const data = await res.json();
@@ -54,9 +24,7 @@ export default function GameModal({ game, onClose }) {
                     data?._embedded?.screenshots ||
                     [];
 
-                setScreenshots(
-                    shots.map(s => typeof s === "string" ? s : s.url)
-                );
+                setScreenshots(shots);
             } catch (e) {
                 console.error("Screenshot error", e);
                 setScreenshots([game.cover]);

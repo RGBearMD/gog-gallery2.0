@@ -1,29 +1,43 @@
 export default async (req) => {
     const url = new URL(req.url);
-    const slug = url.searchParams.get("slug");
+    const id = url.searchParams.get("id");
 
     try {
         const res = await fetch(
-            `https://www.gog.com${slug}`
+            `https://api.gog.com/products/${id}?expand=screenshots`
         );
 
-        const html = await res.text();
+        const data = await res.json();
 
-        // estrazione veloce immagini (GOG usa og:image + gallery json)
-        const matches = [...html.matchAll(/https:\/\/images\.gog-statics\.com\/[^\"]+/g)];
+        const screenshots = (data.screenshots || [])
+            .map((shot) => {
+                const best =
+                    shot.formatted_images?.find(
+                        img => img.formatter_name === "ggvgl_2x"
+                    ) ||
+                    shot.formatted_images?.find(
+                        img => img.formatter_name === "ggvgl"
+                    ) ||
+                    shot.formatted_images?.[0];
 
-        const screenshots = [...new Set(matches.map(m => m[0]))].slice(0, 12);
+                return best?.image_url;
+            })
+            .filter(Boolean);
 
         return new Response(
             JSON.stringify({ screenshots }),
             {
-                headers: { "Content-Type": "application/json" }
+                headers: {
+                    "Content-Type": "application/json"
+                }
             }
         );
 
     } catch (e) {
         return new Response(
-            JSON.stringify({ error: e.message }),
+            JSON.stringify({
+                error: e.message
+            }),
             { status: 500 }
         );
     }
