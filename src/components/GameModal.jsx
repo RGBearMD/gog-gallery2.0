@@ -2,11 +2,7 @@ import { useState, useEffect } from "react";
 
 export default function GameModal({ game, onClose }) {
     const [activeScreenshot, setActiveScreenshot] = useState(null);
-    // Fallback degli screenshot: se l'API non li passa, generiamo dei placeholder intelligenti
     const [screenshots, setScreenshots] = useState([]);
-
-    if (!game) return null;
-    console.log("GAME MODAL DATA:", game);
 
     useEffect(() => {
         if (!game) return;
@@ -19,12 +15,7 @@ export default function GameModal({ game, onClose }) {
 
                 const data = await res.json();
 
-                const shots =
-                    data?.screenshots ||
-                    data?._embedded?.screenshots ||
-                    [];
-
-                setScreenshots(shots);
+                setScreenshots(data.screenshots || []);
             } catch (e) {
                 console.error("Screenshot error", e);
                 setScreenshots([game.cover]);
@@ -33,6 +24,8 @@ export default function GameModal({ game, onClose }) {
 
         load();
     }, [game]);
+
+    if (!game) return null;
 
     return (
         <>
