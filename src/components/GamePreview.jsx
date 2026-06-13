@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { getGameScreenshots } from "../services/gogApi";
 
-export default function GamePreview({ game }) {
+export default function GamePreview({
+    game,
+    index = 0
+}) {
     const ref = useRef(null);
 
     const [visible, setVisible] = useState(false);
@@ -47,21 +50,14 @@ if (screenshots.length === 0) {
     return;
 }
 
-                const pool =
-                    screenshots.length > 1
-                        ? screenshots.slice(1)
-                        : screenshots;
+                const image =
+    screenshots[index] ||
+    screenshots[0];
 
-                const random =
-                    pool[
-                        Math.floor(
-                            Math.random() * pool.length
-                        )
-                    ];
+if (!cancelled) {
+    setImage(image);
+}
 
-                if (!cancelled) {
-                    setImage(random);
-                }
             } catch (err) {
                 console.error(
                     "Preview load error:",
@@ -75,12 +71,12 @@ if (screenshots.length === 0) {
         return () => {
             cancelled = true;
         };
-    }, [visible, image, game.id]);
+    }, [visible, image, game.id, index]);
 
     return (
         <div
     ref={ref}
-    className="h-36 w-full bg-zinc-950 rounded border border-zinc-800 overflow-hidden"
+    className="h-28 w-full bg-zinc-950 rounded border border-zinc-800 overflow-hidden"
 >
             {image ? (
                 <img

@@ -12,11 +12,11 @@ export default async (req) => {
         // Priorità alle immagini più leggere per ridurre
 // traffico dati e velocizzare il caricamento.
 const PRIORITY = [
-    "ggvgt",
-    "ggvgm",
-    "ggvgl",
+    "ggvgl_2x",
     "ggvgm_2x",
-    "ggvgl_2x"
+    "ggvgl",
+    "ggvgm",
+    "ggvgt"
 ];
 
 console.log(

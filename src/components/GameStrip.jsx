@@ -37,8 +37,12 @@ export default function GameStrip({ games, onSelect }) {
                 {game.title}
             </h3>
 
-            {/* Screenshot placeholder finché non implementiamo il caricamento */}
-            <GamePreview game={game} />
+            {/* lazy load 3 screenshots*/}
+            <div className="grid grid-cols-3 gap-2">
+    <GamePreview game={game} index={0} />
+    <GamePreview game={game} index={1} />
+    <GamePreview game={game} index={2} />
+</div>
 
         </div>
 
