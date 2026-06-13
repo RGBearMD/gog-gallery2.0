@@ -126,7 +126,7 @@ function App() {
         />
 
         {/* MAIN CONTENUTI GRIGLIA */}
-        <main className="flex-1 p-4 md:p-8 max-w-[1600px] mx-auto w-full">
+        <main className="flex-1 p-2 md:p-2 max-w-[1600px] mx-auto w-full">
 
           {!hasGames ? (
             /* Schermata di Benvenuto / Import */
