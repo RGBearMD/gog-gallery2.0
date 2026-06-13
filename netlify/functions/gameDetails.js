@@ -19,6 +19,13 @@ const PRIORITY = [
     "ggvgl_2x"
 ];
 
+console.log(
+    "GAME",
+    id,
+    "SCREENSHOTS",
+    data.screenshots?.length || 0
+);
+
 const screenshots = (data.screenshots || [])
     .map((shot) => {
         const best = PRIORITY

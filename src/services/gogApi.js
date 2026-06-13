@@ -9,9 +9,9 @@ export async function getAllGames(username) {
 
     try {
         firstData = JSON.parse(text);
-    } catch (e) {
+    } catch {
         console.error("Risposta non JSON:", text);
-        throw new Error("API non valida / function rotta");
+        throw new Error("API non valida / function rotta.\nRisposta ricevuta:\n${text}");
     }
 
     const pages = firstData.pages;
