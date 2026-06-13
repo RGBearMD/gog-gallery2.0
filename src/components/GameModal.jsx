@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 
 export default function GameModal({ game, onClose }) {
     const [activeScreenshot, setActiveScreenshot] = useState(null);
-    const [screenshots, setScreenshots] = useState([game?.cover].filter(Boolean));
+    const [screenshots, setScreenshots] = useState(
+        () => [game?.cover].filter(Boolean)
+    );
 
 useEffect(() => {
     if (!game) return;
@@ -36,10 +38,6 @@ useEffect(() => {
     return () => {
         cancelled = true;
     };
-}, [game]);
-
-useEffect(() => {
-    setActiveScreenshot(null);
 }, [game]);
 
     if (!game) return null;
@@ -82,8 +80,12 @@ console.log(
 ======================================================= */}
 <div className="p-6 md:p-8 relative z-10">
     <h2 className="text-3xl font-black tracking-tight text-white mb-6">
-        {game.title}
-    </h2>
+    {game.title}
+</h2>
+
+<div className="text-xs text-red-400 mb-4">
+    ID: {game.id}
+</div>
 
     {/* ===================================================
        LAYOUT DESKTOP:

@@ -184,9 +184,10 @@ function App() {
 
       {/* MODAL DETTAGLI */}
       <GameModal
-        game={selectedGame}
-        onClose={() => setSelectedGame(null)}
-      />
+    key={selectedGame?.id}
+    game={selectedGame}
+    onClose={() => setSelectedGame(null)}
+/>
     </div>
   );
 }
