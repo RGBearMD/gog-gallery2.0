@@ -25,10 +25,6 @@ function App() {
 
   const hasGames = games.length > 0;
 
-  useEffect(() => {
-    console.log("GAMES STATUS UPDATED:", games);
-  }, [games]);
-
   function pickRandomGame() {
     if (!games.length) return;
     const random = games[Math.floor(Math.random() * games.length)];
@@ -52,7 +48,6 @@ function App() {
       const data = DEV_MOCK ? mockGames : await getAllGames(username);
       const cleanData = Array.isArray(data) ? data : [];
       
-      /* BONIFICA DI SICUREZZA: Rimuove duplicati basandosi sull'id prima di salvare lo stato */
       const uniqueData = cleanData.filter(
         (game, index, self) => self.findIndex((g) => g.id === game.id) === index
       );
@@ -67,80 +62,67 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-900 text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-zinc-900 text-white flex flex-col font-sans relative pb-12">
       
       {/* HEADER BAR */}
-      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4">
-        {/* Titolo e Toggle Mock di Debug */}
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-            GOG Gallery
-          </h1>
-          {!hasGames && (
-            <button 
-              onClick={() => setDEV_MOCK(!DEV_MOCK)} 
-              className={`text-xs px-2 py-1 rounded font-mono transition-colors ${DEV_MOCK ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-500"}`}
-            >
-              Mock Mode: {DEV_MOCK ? "ON" : "OFF"}
-            </button>
-          )}
-        </div>
-
-        {/* Barra controlli condizionale */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Hamburger visibile su mobile se ci sono giochi */}
+      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4 flex flex-col gap-3">
+        {/* Titolo in cima a tutto */}
+        <div className="flex items-center gap-3">
           {hasGames && (
             <button
               onClick={() => setIsMobileIndexOpen(true)}
-              className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition md:hidden"
+              className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition md:hidden text-sm"
             >
-              ☰
+              ☰ Index
             </button>
           )}
-
-          <button
-            onClick={() => setViewMode("strip")}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              viewMode === "strip" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            Strip
-          </button>
-
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-              viewMode === "grid" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            Cards
-          </button>
-
-          {hasGames && (
-            <>
-              <button
-                onClick={downloadList}
-                className="bg-zinc-800 hover:bg-zinc-700 text-sm font-bold px-3 py-1.5 rounded transition"
-              >
-                📥 Lista
-              </button>
-
-              <button
-                onClick={pickRandomGame}
-                className="bg-purple-600 hover:bg-purple-700 text-sm font-bold px-3 py-1.5 rounded transition"
-                title="Scegli un gioco casuale"
-              >
-                🎲 Casual
-              </button>
-            </>
-          )}
+          <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
+            GOG Gallery
+          </h1>
         </div>
+
+        {/* CONTROLLI VISIBILI SOLO DOPO L'IMPORT */}
+        {hasGames && (
+          <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+            <button
+              onClick={() => setViewMode("strip")}
+              className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+                viewMode === "strip" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
+              }`}
+            >
+              Strip
+            </button>
+
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+                viewMode === "grid" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
+              }`}
+            >
+              Cards
+            </button>
+
+            <button
+              onClick={downloadList}
+              className="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded transition"
+            >
+              📥 Lista
+            </button>
+
+            <button
+              onClick={pickRandomGame}
+              className="bg-purple-600 hover:bg-purple-700 text-xs font-bold px-3 py-1.5 rounded transition"
+            >
+              🎲 Casual
+            </button>
+          </div>
+        )}
       </header>
 
       {/* CORE WRAPPER */}
       <div className="flex flex-1 relative">
         
-        {/* SIDEBAR COMPONENT */}
+        {/* SIDEBAR */}
         <GameIndex
           games={games}
           onSelect={setSelectedGame}
@@ -148,22 +130,22 @@ function App() {
           onClose={() => setIsMobileIndexOpen(false)}
         />
 
-        {/* MAIN CONTENUTI GRIGLIA */}
-        <main className="flex-1 p-4 max-w-[1600px] mx-auto w-full">
+        {/* CONTENT AREA */}
+        <main className="flex-1 p-4 flex flex-col justify-center max-w-[1600px] mx-auto w-full">
           {!hasGames ? (
-            /* Schermata di Benvenuto / Import */
-            <div className="text-center py-24 max-w-xl mx-auto px-4">
-              <h2 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight">
+            /* Schermata di Benvenuto (Senza spazi vuoti enormi sopra) */
+            <div className="text-center py-6 my-auto max-w-xl mx-auto w-full px-2 animate-fade-in">
+              <h2 className="text-2xl md:text-4xl font-extrabold mb-3 tracking-tight text-zinc-100">
                 Crea la tua galleria personale
               </h2>
-              <p className="text-zinc-400 mb-8 text-sm md:text-base">
+              <p className="text-zinc-400 mb-6 text-xs md:text-sm leading-relaxed">
                 Importa istantaneamente la tua libreria digitale GOG e sfoglia i tuoi titoli con una UX da gaming moderna.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-2 bg-zinc-950 p-2 rounded-xl border border-zinc-800 shadow-xl">
+              <div className="flex flex-col gap-2 bg-zinc-950 p-2 rounded-xl border border-zinc-800 shadow-xl">
                 <input
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleImport();
+                    if (e.key === "Enter" && (username || DEV_MOCK)) handleImport();
                   }}
                   className="flex-1 p-3 rounded-lg bg-zinc-900 text-white placeholder-zinc-500 border border-transparent focus:border-zinc-700 outline-none text-sm transition"
                   placeholder={DEV_MOCK ? "Modalità Mock attiva, clicca Importa" : "Inserisci username GOG"}
@@ -174,7 +156,7 @@ function App() {
                 <button
                   onClick={handleImport}
                   disabled={loading || (!username && !DEV_MOCK)}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 px-6 py-3 rounded-lg font-bold text-sm transition-all shadow-md shadow-blue-600/10 active:scale-[0.98]"
+                  className="bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-800 disabled:text-zinc-600 px-6 py-3 rounded-lg font-bold text-sm transition-all"
                 >
                   {loading ? "Importazione..." : "Importa"}
                 </button>
@@ -184,20 +166,20 @@ function App() {
                 <button
                   type="button"
                   onClick={() => setShowHelp(true)}
-                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                  className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   Come rendere pubblico il profilo GOG →
                 </button>
               </div>
             </div>
           ) : (
-            /* Visualizzazione selettiva dei Giochi */
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                <h2 className="text-xl font-bold tracking-tight text-zinc-200">
+            /* Layout dei giochi dopo l'importazione */
+            <div className="space-y-4 w-full h-full justify-start my-0">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <h2 className="text-sm font-bold tracking-wider uppercase text-zinc-400">
                   {viewMode === "strip" ? "Tabella Dettagliata" : "Galleria Copertine"}
                 </h2>
-                <span className="text-xs font-mono px-2 py-1 bg-zinc-800 rounded text-zinc-400">
+                <span className="text-xs font-mono px-2 py-0.5 bg-zinc-800 rounded text-zinc-400">
                   {games.length} elementi
                 </span>
               </div>
@@ -212,7 +194,23 @@ function App() {
         </main>
       </div>
 
-      {/* MODAL DETTAGLI E HELP */}
+      {/* MOCK MODE IN FONDO ALLA PAGINA (Visibile solo se non ci sono giochi importati) */}
+      {!hasGames && (
+        <footer className="absolute bottom-3 left-0 right-0 flex justify-center z-10">
+          <button 
+            onClick={() => setDEV_MOCK(!DEV_MOCK)} 
+            className={`text-[11px] px-3 py-1 rounded-full font-mono font-bold tracking-wider border transition-all shadow-md ${
+              DEV_MOCK 
+                ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/60" 
+                : "bg-zinc-950/80 text-zinc-500 border-zinc-800"
+            }`}
+          >
+            ⚙️ Sviluppo - Mock Mode: {DEV_MOCK ? "ATTIVO" : "DISATTIVATO"}
+          </button>
+        </footer>
+      )}
+
+      {/* MODALS */}
       <GameModal
         key={selectedGame?.id}
         game={selectedGame}
