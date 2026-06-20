@@ -39,7 +39,7 @@ export default function GameGrid({ games, onSelect }) {
                             {game.title}
                         </h3>
                         
-                        <div>
+                        {/*<div>
                             {game.playtime > 0 ? (
                                 <p className="text-xs text-purple-400 font-medium">
                                     {game.playtime} ore registrate
@@ -49,7 +49,7 @@ export default function GameGrid({ games, onSelect }) {
                                     Mai giocato
                                 </p>
                             )}
-                        </div>
+                        </div>*/}
                     </div>
                 </div>
             ))}
