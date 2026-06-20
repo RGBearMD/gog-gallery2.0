@@ -7,8 +7,8 @@ import GameStrip from "./components/GameStrip";
 import PublicProfileHelpModal from "./components/PublicProfileHelpModal";
 
 const mockGames = [
-  { id: "1", title: "Cyberpunk Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg", playtime: 120, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg"] },
-  { id: "2", title: "Witcher Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg", playtime: 84 },
+  { id: "1", title: "Cyberpunk Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg", playtime: 120, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg", "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg"] },
+  { id: "2", title: "Witcher Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbd.jpg", playtime: 84, screenshots: ["https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg", "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg"] },
   { id: "3", title: "Deus Ex Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r77.jpg", playtime: 12 },
   { id: "4", title: "Hades Mock", cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2g7a.jpg", playtime: 45 },
 ];
@@ -65,53 +65,55 @@ function App() {
     <div className="min-h-screen bg-zinc-900 text-white flex flex-col font-sans relative pb-12">
       
       {/* HEADER BAR */}
-      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4 flex flex-col gap-3">
-        {/* Titolo in cima a tutto */}
+      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex flex-col gap-2">
+        {/* Titolo in cima */}
         <div className="flex items-center gap-3">
           {hasGames && (
             <button
               onClick={() => setIsMobileIndexOpen(true)}
-              className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition md:hidden text-sm"
+              className="p-1.5 bg-zinc-800 rounded hover:bg-zinc-700 transition md:hidden text-xs"
             >
-              ☰ Index
+              ☰
             </button>
           )}
-          <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
+          <h1 className="text-xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
             GOG Gallery
           </h1>
         </div>
 
-        {/* CONTROLLI VISIBILI SOLO DOPO L'IMPORT */}
+        {/* CONTROLLI COMPATTI SU UNA RIGA SOLA */}
         {hasGames && (
-          <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+          <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto pb-1 no-scrollbar animate-fade-in">
             <button
               onClick={() => setViewMode("strip")}
-              className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center ${
                 viewMode === "strip" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
               }`}
             >
-              Strip
+              ☰ Strip
             </button>
 
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded text-xs font-bold transition-colors ${
+              className={`px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center ${
                 viewMode === "grid" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
               }`}
             >
-              Cards
+              ⚃ Cards
             </button>
 
             <button
               onClick={downloadList}
-              className="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded transition"
+              className="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap transition"
+              title="Scarica Lista"
             >
               📥 Lista
             </button>
 
             <button
               onClick={pickRandomGame}
-              className="bg-purple-600 hover:bg-purple-700 text-xs font-bold px-3 py-1.5 rounded transition"
+              className="bg-purple-600 hover:bg-purple-700 text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap transition"
+              title="Gioco Casuale"
             >
               🎲 Casual
             </button>
@@ -121,8 +123,6 @@ function App() {
 
       {/* CORE WRAPPER */}
       <div className="flex flex-1 relative">
-        
-        {/* SIDEBAR */}
         <GameIndex
           games={games}
           onSelect={setSelectedGame}
@@ -130,10 +130,8 @@ function App() {
           onClose={() => setIsMobileIndexOpen(false)}
         />
 
-        {/* CONTENT AREA */}
         <main className="flex-1 p-4 flex flex-col justify-center max-w-[1600px] mx-auto w-full">
           {!hasGames ? (
-            /* Schermata di Benvenuto (Senza spazi vuoti enormi sopra) */
             <div className="text-center py-6 my-auto max-w-xl mx-auto w-full px-2 animate-fade-in">
               <h2 className="text-2xl md:text-4xl font-extrabold mb-3 tracking-tight text-zinc-100">
                 Crea la tua galleria personale
@@ -173,15 +171,11 @@ function App() {
               </div>
             </div>
           ) : (
-            /* Layout dei giochi dopo l'importazione */
             <div className="space-y-4 w-full h-full justify-start my-0">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                <h2 className="text-sm font-bold tracking-wider uppercase text-zinc-400">
-                  {viewMode === "strip" ? "Tabella Dettagliata" : "Galleria Copertine"}
+              <div className="border-b border-zinc-800 pb-2">
+                <h2 className="text-xs font-medium tracking-wide text-zinc-400">
+                  Nella tua libreria ci sono {games.length} giochi
                 </h2>
-                <span className="text-xs font-mono px-2 py-0.5 bg-zinc-800 rounded text-zinc-400">
-                  {games.length} elementi
-                </span>
               </div>
               
               {viewMode === "strip" ? (
@@ -194,15 +188,12 @@ function App() {
         </main>
       </div>
 
-      {/* MOCK MODE IN FONDO ALLA PAGINA (Visibile solo se non ci sono giochi importati) */}
       {!hasGames && (
         <footer className="absolute bottom-3 left-0 right-0 flex justify-center z-10">
           <button 
             onClick={() => setDEV_MOCK(!DEV_MOCK)} 
-            className={`text-[11px] px-3 py-1 rounded-full font-mono font-bold tracking-wider border transition-all shadow-md ${
-              DEV_MOCK 
-                ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/60" 
-                : "bg-zinc-950/80 text-zinc-500 border-zinc-800"
+            className={`text-[11px] px-3 py-1 rounded-full font-mono font-bold tracking-wider border transition-all ${
+              DEV_MOCK ? "bg-emerald-950/80 text-emerald-400 border-emerald-800/60" : "bg-zinc-950/80 text-zinc-500 border-zinc-800"
             }`}
           >
             ⚙️ Sviluppo - Mock Mode: {DEV_MOCK ? "ATTIVO" : "DISATTIVATO"}
@@ -210,17 +201,8 @@ function App() {
         </footer>
       )}
 
-      {/* MODALS */}
-      <GameModal
-        key={selectedGame?.id}
-        game={selectedGame}
-        onClose={() => setSelectedGame(null)}
-      />
-
-      <PublicProfileHelpModal
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-      />
+      <GameModal key={selectedGame?.id} game={selectedGame} onClose={() => setSelectedGame(null)} />
+      <PublicProfileHelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }
