@@ -43,6 +43,29 @@ function App() {
     setSelectedGame(random);
   }
 
+  function downloadList() {
+    const text = games
+        .map((g) => g.title)
+        .join("\n");
+
+    const blob = new Blob(
+        [text],
+        { type: "text/plain" }
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+    a.download = "gog-games.txt";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
   async function handleImport() {
     setLoading(true);
 
@@ -64,57 +87,100 @@ function App() {
     <div className="min-h-screen bg-zinc-900 text-white flex flex-col font-sans">
 
       {/* HEADER BAR */}
-      <header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4 md:px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Hamburger per Mobile */}
-            
-            <button
-    onClick={() => setIsMobileIndexOpen(true)}
-              className="p-2 bg-zinc-800 rounded hover:bg-zinc-700 transition"
-            >
-              ☰
-            </button>
-                 {/* selezione vista */}
-     
-            <div className="flex gap-2">
-    <button
-        onClick={() => setViewMode("strip")}
-        className={`px-3 py-1 rounded text-sm ${
-            viewMode === "strip"
-                ? "bg-purple-600 text-white"
-                : "bg-zinc-800 text-zinc-400"
-        }`}
-    >
-        Strip
-    </button>
+<header className="sticky top-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 px-4 py-4">
 
-    <button
-        onClick={() => setViewMode("grid")}
-        className={`px-3 py-1 rounded text-sm ${
-            viewMode === "grid"
-                ? "bg-purple-600 text-white"
-                : "bg-zinc-800 text-zinc-400"
-        }`}
-    >
-        Cards
-    </button>
-</div>
-          
-          <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-500 bg-clip-text text-transparent">
-            GOG Gallery
-          </h1>
-        </div>
+    {/* Titolo */}
+    <h1 className="
+        text-xl
+        md:text-2xl
+        font-black
+        bg-gradient-to-r
+        from-purple-400
+        to-indigo-500
+        bg-clip-text
+        text-transparent
+        mb-3
+    ">
+        GOG Gallery
+    </h1>
 
-        {/* Bottone Random rapido se ci sono giochi */}
+    {/* Barra controlli */}
+    <div className="flex items-center gap-2 flex-wrap">
+
+        {/* Hamburger */}
+        <button
+            onClick={() => setIsMobileIndexOpen(true)}
+            className="
+                p-2
+                bg-zinc-800
+                rounded
+                hover:bg-zinc-700
+                transition
+            "
+        >
+            ☰
+        </button>
+
+        {/* Vista */}
+        <button
+            onClick={() => setViewMode("strip")}
+            className={`px-3 py-2 rounded text-sm ${
+                viewMode === "strip"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-800 text-zinc-400"
+            }`}
+        >
+            Strip
+        </button>
+
+        <button
+            onClick={() => setViewMode("grid")}
+            className={`px-3 py-2 rounded text-sm ${
+                viewMode === "grid"
+                    ? "bg-purple-600 text-white"
+                    : "bg-zinc-800 text-zinc-400"
+            }`}
+        >
+            Cards
+        </button>
+
         {hasGames && (
-          <button
-            onClick={pickRandomGame}
-            className="bg-purple-600 hover:bg-purple-700 text-xs md:text-sm font-bold px-4 py-2 rounded-full transition shadow-lg shadow-purple-600/20 flex items-center gap-1.5"
-          >
-            🎲 <span className="hidden sm:inline">Gioco Casuale</span>
-          </button>
+            <>
+                <button
+                    onClick={downloadList}
+                    className="
+                        bg-zinc-800
+                        hover:bg-zinc-700
+                        text-sm
+                        font-bold
+                        px-3 py-2
+                        rounded
+                        transition
+                    "
+                >
+                    📥 Lista
+                </button>
+
+                <button
+                    onClick={pickRandomGame}
+                    className="
+                        bg-purple-600
+                        hover:bg-purple-700
+                        text-sm
+                        font-bold
+                        px-3 py-2
+                        rounded
+                        transition
+                    "
+                >
+                    🎲
+                </button>
+            </>
         )}
-      </header>
+
+    </div>
+
+</header>
 
       {/* CORE WRAPPER (Layout a colonne affiancate) */}
       <div className="flex flex-1 relative">
