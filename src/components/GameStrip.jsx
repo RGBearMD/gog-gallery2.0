@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 
+// Fallback screenshot di qualità per giochi reali che non forniscono screenshot dall'API GOG/Steam
+const FALLBACK_SCREENSHOTS = [
+  "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg",
+  "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg",
+  "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb4.jpg",
+  "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb5.jpg"
+];
+
 export default function GameStrip({ games, onSelect }) {
   const [expandedGameId, setExpandedGameId] = useState(null);
-  const [activeLightbox, setActiveLightbox] = useState(null); // { screenshots: [], index: 0 }
+  const [activeLightbox, setActiveLightbox] = useState(null);
 
   const toggleExpand = (e, gameId) => {
     e.stopPropagation();
@@ -35,7 +43,6 @@ export default function GameStrip({ games, onSelect }) {
     }));
   };
 
-  // Navigazione tramite frecce della tastiera
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!activeLightbox) return;
@@ -51,9 +58,12 @@ export default function GameStrip({ games, onSelect }) {
     <div className="flex flex-col gap-3 w-full">
       {games.map((game) => {
         const isExpanded = expandedGameId === game.id;
-        const screenshots = game.screenshots || [];
-        // Se non ci sono screenshot, usiamo la copertina come ripiego per riempire i 4 slot
-        const displayScreenshots = Array.from({ length: 4 }, (_, i) => screenshots[i] || game.cover);
+        const realScreenshots = (game.screenshots && game.screenshots.length > 0) ? game.screenshots : [];
+        
+        // Costruiamo sempre 4 screenshot distinti evitando di duplicare la copertina
+        const displayScreenshots = Array.from({ length: 4 }, (_, i) => 
+          realScreenshots[i] || FALLBACK_SCREENSHOTS[i % FALLBACK_SCREENSHOTS.length]
+        );
 
         return (
           <div
@@ -134,12 +144,10 @@ export default function GameStrip({ games, onSelect }) {
           onClick={closeLightbox}
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 animate-fade-in"
         >
-          {/* CONTENITORE IMMAGINE E FRECCE */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-5xl w-full max-h-[85vh] flex items-center justify-center"
           >
-            {/* FRECCIA SINISTRA */}
             <button
               onClick={prevImage}
               className="absolute left-2 z-10 bg-zinc-900/80 hover:bg-purple-600 text-white p-3 rounded-full border border-zinc-700 transition-all transform -translate-y-1/2 top-1/2 shadow-lg"
@@ -148,14 +156,12 @@ export default function GameStrip({ games, onSelect }) {
               ◀
             </button>
 
-            {/* IMMAGINE PRINCIPALE */}
             <img
               src={activeLightbox.screenshots[activeLightbox.index]}
               alt="Screenshot ingrandito"
               className="max-w-full max-h-[80vh] object-contain rounded-lg border border-zinc-800 shadow-2xl"
             />
 
-            {/* FRECCIA DESTRA */}
             <button
               onClick={nextImage}
               className="absolute right-2 z-10 bg-zinc-900/80 hover:bg-purple-600 text-white p-3 rounded-full border border-zinc-700 transition-all transform -translate-y-1/2 top-1/2 shadow-lg"
@@ -164,7 +170,6 @@ export default function GameStrip({ games, onSelect }) {
               ▶
             </button>
 
-            {/* PULSANTE CHIUDI */}
             <button
               onClick={closeLightbox}
               className="absolute -top-10 right-0 text-zinc-400 hover:text-white font-bold text-sm bg-zinc-800 px-3 py-1 rounded-full border border-zinc-700"
@@ -172,7 +177,6 @@ export default function GameStrip({ games, onSelect }) {
               ✕ Chiudi
             </button>
 
-            {/* INDICATORE CONTEGGIO */}
             <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-mono text-zinc-400 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
               {activeLightbox.index + 1} / {activeLightbox.screenshots.length}
             </div>
