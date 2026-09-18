@@ -4,7 +4,7 @@ export default function GameCard({ game }) {
             href={game.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-zinc-800 rounded-lg overflow-hidden block hover:scale-[1.02] transition h-full border border-zinc-700/50"
+            className="bg-zinc-800 rounded-lg overflow-hidden block hover:scale-[1.02] transition border border-zinc-700/50"
         >
             {/* Contenitore con aspect ratio fisso e object-contain per non tagliare la cover */}
             {/*<div className="w-full aspect-square bg-zinc-950 flex items-center justify-center overflow-hidden">*/}
@@ -13,7 +13,7 @@ export default function GameCard({ game }) {
                     src={game.cover}
                     alt={game.title}
                     loading="lazy"
-                    className="w-full h-full object-contain"
+                    className="w-full object-contain"
                 />
             </div>
 

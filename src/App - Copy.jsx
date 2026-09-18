@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SteamImporter from "./components/SteamImporter";
 import GameGrid from "./components/GameGrid";
 import { getAllGames } from "./services/gogApi";
 import GameModal from "./components/GameModal";
@@ -62,7 +63,6 @@ function App() {
   const [username, setUsername] = useState("");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
   const [selectedGame, setSelectedGame] = useState(null);
   const [isMobileIndexOpen, setIsMobileIndexOpen] = useState(false);
   const [DEV_MOCK, setDEV_MOCK] = useState(false);
@@ -90,30 +90,10 @@ function App() {
 
   async function handleImport() {
     setLoading(true);
-    setErrorMsg(null);
-
     try {
-      let data = [];
-
-      if (DEV_MOCK) {
-        data = mockGames;
-      } else if (platform === "steam") {
-        // Chiamata alla Netlify Function per Steam
-        const res = await fetch(`/.netlify/functions/fetchSteamGames?user=${encodeURIComponent(username)}`);
-        const json = await res.json();
-
-        if (!res.ok) {
-          throw new Error(json.error || "Errore durante l'importazione da Steam.");
-        }
-        data = json.games || [];
-      } else {
-        // Chiamata a GOG
-        data = await getAllGames(username);
-      }
-
+      const data = DEV_MOCK ? mockGames : await getAllGames(username);
       const cleanData = Array.isArray(data) ? data : [];
 
-      // Rimozione duplicati
       const uniqueData = cleanData.filter(
         (game, index, self) => self.findIndex((g) => g.id === game.id) === index
       );
@@ -121,9 +101,8 @@ function App() {
       setGames(uniqueData);
     } catch (e) {
       console.error("IMPORT ERROR:", e);
-      setErrorMsg(e.message || "Errore durante il recupero dei dati.");
       setGames([]);
-    } flex {
+    } finally {
       setLoading(false);
     }
   }
@@ -210,7 +189,6 @@ function App() {
                   onClick={() => {
                     setPlatform("gog");
                     setUsername("");
-                    setErrorMsg(null);
                   }}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
                     platform === "gog"
@@ -226,7 +204,6 @@ function App() {
                   onClick={() => {
                     setPlatform("steam");
                     setUsername("");
-                    setErrorMsg(null);
                   }}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
                     platform === "steam"
@@ -249,9 +226,7 @@ function App() {
                   placeholder={
                     DEV_MOCK
                       ? `Modalità Mock attiva (${platform.toUpperCase()}), clicca Importa`
-                      : platform === "steam"
-                      ? "Username Steam, SteamID o URL profilo (es. Shuren-aihi)..."
-                      : "Inserisci il tuo username GOG..."
+                      : `Inserisci il tuo username ${platform.toUpperCase()}`
                   }
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -270,13 +245,6 @@ function App() {
                 </button>
               </div>
 
-              {/* MESSAGGIO DI ERRORE */}
-              {errorMsg && (
-                <div className="mt-3 p-3 bg-red-950/80 border border-red-800 rounded-lg text-xs text-red-300 text-left">
-                  ⚠️ {errorMsg}
-                </div>
-              )}
-
               <div className="mt-4">
                 <button
                   type="button"
@@ -289,16 +257,10 @@ function App() {
             </div>
           ) : (
             <div className="space-y-4 w-full h-full justify-start my-0">
-              <div className="border-b border-zinc-800 pb-2 flex justify-between items-center">
+              <div className="border-b border-zinc-800 pb-2">
                 <h2 className="text-xs font-medium tracking-wide text-zinc-400">
-                  Nella tua libreria ci sono {games.length} giochi ({platform.toUpperCase()})
+                  Nella tua libreria ci sono {games.length} giochi
                 </h2>
-                <button
-                  onClick={() => setGames([])}
-                  className="text-[11px] text-zinc-500 hover:text-zinc-300 underline"
-                >
-                  Cambia utente / piattaforma
-                </button>
               </div>
 
               {viewMode === "strip" ? (
