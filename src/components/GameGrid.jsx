@@ -1,58 +1,43 @@
 export default function GameGrid({ games, onSelect }) {
-    // Sicurezza: rimuove eventuali record duplicati con lo stesso ID a monte
-    const uniqueGames = games.filter(
-        (game, index, self) => self.findIndex((g) => g.id === game.id) === index
-    );
+  const uniqueGames = games.filter(
+    (game, index, self) => self.findIndex((g) => g.id === game.id) === index
+  );
 
-    return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-3">       
-            {uniqueGames.map((game) => (
-                <div
-                    id={`game-${game.id}`}
-                    key={game.id}
-                    onClick={() => {
-                        console.log("CLICK CARD", game.id, game.title);
-                        onSelect(game);
-                    }}
-                    className="bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 cursor-pointer group hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(147,51,234,0.25)] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
-                >
-                    {/* CONTENITORE COPERTINA UNICA: Aspect ratio 3:4 protetto senza tagli */}
-                    <div className="w-full aspect-square bg-zinc-950 flex items-center justify-center overflow-hidden border-b border-zinc-800/60 relative">
-                        <img
-                            src={game.cover}
-                            alt={game.title}
-                            loading="lazy"
-                            className="w-full h-full object-contain transform group-hover:scale-[1.02] transition-transform duration-500"
-                        />
-                        
-                        {/* Se esiste uno screenshot di preview, lo mostriamo solo in un piccolo badge o al passaggio del mouse se preferisci, evitiamo di duplicare sotto */}
-                        {game.previewScreenshot && (
-                            <span className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs text-[10px] text-purple-400 font-bold px-1.5 py-0.5 rounded border border-zinc-700/50">
-                                📸 Preview
-                            </span>
-                        )}
-                    </div>
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 p-2">
+      {uniqueGames.map((game) => (
+        <button
+          id={`game-${game.id}`}
+          key={game.id}
+          onClick={() => onSelect(game)}
+          className="group relative w-full bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer hover:border-purple-500/60 hover:shadow-[0_0_20px_rgba(147,51,234,0.25)] hover:-translate-y-0.5 transition-all duration-200 text-left"
+        >
+          {/* FORCED 1:1 SQUARE COVER */}
+          <div className="relative w-full aspect-square bg-zinc-950 overflow-hidden">
+            <img
+              src={game.cover}
+              alt={game.title}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                e.currentTarget.src =
+                  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2318181b'/><text x='50' y='55' text-anchor='middle' fill='%2352525b' font-size='10' font-family='sans-serif'>No Cover</text></svg>";
+              }}
+            />
+            {/* Platform badge */}
+            <span className="absolute top-1 left-1 bg-black/70 backdrop-blur-sm text-[9px] text-zinc-300 font-bold px-1.5 py-0.5 rounded border border-zinc-700/50">
+              {game.platform || "GAME"}
+            </span>
+          </div>
 
-                    {/* DETTAGLI DEL GIOCO (RIATTIVATI) */}
-                    <div className="p-3 bg-zinc-900/50 flex-1 flex flex-col justify-between gap-1">
-                        <h3 className="font-bold text-[0.7em] text-zinc-200 line-clamp-2 group-hover:text-white transition-colors">
-                            {game.title}
-                        </h3>
-                        
-                        {/*<div>
-                            {game.playtime > 0 ? (
-                                <p className="text-xs text-purple-400 font-medium">
-                                    {game.playtime} ore registrate
-                                </p>
-                            ) : (
-                                <p className="text-xs text-zinc-500 font-medium">
-                                    Mai giocato
-                                </p>
-                            )}
-                        </div>*/}
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
+          {/* COMPACT TITLE */}
+          <div className="p-1.5 bg-zinc-900">
+            <h3 className="font-semibold text-[0.65em] leading-tight text-zinc-200 line-clamp-2 group-hover:text-white transition-colors">
+              {game.title}
+            </h3>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
 }

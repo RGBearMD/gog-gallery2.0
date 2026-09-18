@@ -1,17 +1,19 @@
 // netlify/functions/fetchSteamGames.js
+import * as cheerio from "cheerio";
+
 export async function handler(event) {
   try {
-    let input = event.queryStringParameters?.user || "";
+    let input = (event.queryStringParameters?.user || "").trim().replace(/\/$/, "");
 
     if (!input) {
       return {
         statusCode: 400,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ error: "Inserisci un ID o username Steam." }),
       };
     }
 
-    // Pulizia dell'input
-    input = input.trim().replace(/\/$/, "");
+    // --- Risoluzione vanity URL / SteamID a 64 bit ---
     let steamIdOrVanity = input;
     let isFullId = false;
 
@@ -22,80 +24,104 @@ export async function handler(event) {
       isFullId = true;
     } else if (/^\d{17}$/.test(input)) {
       isFullId = true;
+    } else if (/^\d+$/.test(input)) {
+      // SteamID a 64 bit anche senza padding
+      isFullId = true;
     }
 
-    // Costruzione dell'URL XML di Steam
     const targetUrl = isFullId
       ? `https://steamcommunity.com/profiles/${steamIdOrVanity}/games?xml=1`
       : `https://steamcommunity.com/id/${steamIdOrVanity}/games?xml=1`;
 
     const response = await fetch(targetUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       },
     });
 
     if (!response.ok) {
-      throw new Error(`Steam ha risposto con status HTTP ${response.status}`);
-    }
-
-    const xmlText = await response.text();
-
-    // Controlla se il profilo o la lista giochi sono privati
-    if (
-      xmlText.includes("<error>") ||
-      xmlText.includes("is private") ||
-      xmlText.includes("private")
-    ) {
       return {
-        statusCode: 400,
+        statusCode: response.status === 404 ? 404 : 502,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: "Profilo o lista giochi PRIVATA. Su Steam vai in Modifica Profilo -> Impostazioni Privacy e imposta 'Dettagli Giochi' su PUBBLICO.",
+          error: `Steam ha risposto con status HTTP ${response.status}. Verifica l'username o l'ID.`,
         }),
       };
     }
 
-    // Estrazione dei giochi
+    const xmlText = await response.text();
+
+    if (!xmlText || xmlText.trim().length === 0) {
+      return {
+        statusCode: 502,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Risposta vuota da Steam. Riprova più tardi." }),
+      };
+    }
+
+    // --- Parsing robusto con cheerio ---
+    const $ = cheerio.load(xmlText, { xmlMode: true });
+
+    // Rilevamento profilo/lista giochi PRIVATA
+    const errorText = $("error").text().toLowerCase();
+    const bodyText = xmlText.toLowerCase();
+    const isPrivate =
+      $("games").length === 0 ||
+      errorText.includes("private") ||
+      errorText.includes("could not find") ||
+      bodyText.includes("the specified profile could not be found") ||
+      bodyText.includes("this profile is private") ||
+      bodyText.includes("game details are private");
+
+    if (isPrivate) {
+      return {
+        statusCode: 400,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          error:
+            "Profilo o lista giochi PRIVATA. Su Steam vai in Modifica Profilo → Impostazioni Privacy e imposta 'Dettagli dei giochi' su PUBBLICO.",
+        }),
+      };
+    }
+
+    // --- Estrazione giochi ---
     const games = [];
-    const gameBlocks = xmlText.match(/<game>([\s\S]*?)<\/game>/g) || [];
+    $("game").each((_, el) => {
+      const $game = $(el);
+      const appId = $game.find("appID").text().trim();
+      const name =
+        $game.find("name").text().trim() ||
+        $game.find("name").html()?.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() ||
+        "";
+      const hoursRaw = $game.find("hoursOnRecord").text().trim().replace(",", ".");
+      const hoursPlayed = hoursRaw ? parseFloat(hoursRaw) : 0;
 
-    gameBlocks.forEach((block) => {
-      const appIDMatch = block.match(/<appID>(.*?)<\/appID>/);
-      const nameMatch =
-        block.match(/<name><!\[CDATA\[(.*?)\]\]><\/name>/) ||
-        block.match(/<name>(.*?)<\/name>/);
-      const hoursMatch = block.match(/<hoursOnRecord>(.*?)<\/hoursOnRecord>/);
+      if (!appId || !name) return;
 
-      if (appIDMatch && nameMatch) {
-        const appId = appIDMatch[1].trim();
-        const title = nameMatch[1].trim();
-        const hoursPlayed = hoursMatch
-          ? parseFloat(hoursMatch[1].replace(",", ""))
-          : 0;
-
-        games.push({
-          id: `steam-${appId}`,
-          appId: appId,
-          title: title,
-          playtime: Math.round(hoursPlayed * 60),
-          hoursOnRecord: hoursPlayed,
-          cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`,
-          screenshots: [
-            `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_1.jpg`,
-            `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_2.jpg`,
-          ],
-          platform: "Steam",
-        });
-      }
+      games.push({
+        id: `steam-${appId}`,
+        appId,
+        title: name,
+        playtime: Math.round(hoursPlayed * 60),
+        hoursOnRecord: hoursPlayed,
+        cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`,
+        screenshots: [
+          `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_1.jpg`,
+          `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_2.jpg`,
+        ],
+        platform: "Steam",
+      });
     });
 
-    // Se non trova giochi, notifica l'utente anziché restituire un array vuoto silente
     if (games.length === 0) {
       return {
         statusCode: 404,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: "Nessun gioco trovato per questo utente. Verifica l'ID o le impostazioni di privacy su Steam.",
+          error:
+            "Nessun gioco trovato per questo utente. Verifica l'ID/username e che la lista giochi sia PUBBLICA su Steam.",
         }),
       };
     }
@@ -103,15 +129,13 @@ export async function handler(event) {
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        totalGames: games.length,
-        games: games,
-      }),
+      body: JSON.stringify({ totalGames: games.length, games }),
     };
   } catch (error) {
     console.error("Steam Import Error:", error);
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         error: error.message || "Impossibile recuperare la libreria Steam.",
       }),
