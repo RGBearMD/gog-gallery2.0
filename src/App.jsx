@@ -123,7 +123,7 @@ function App() {
       console.error("IMPORT ERROR:", e);
       setErrorMsg(e.message || "Errore durante il recupero dei dati.");
       setGames([]);
-    } flex {
+    } finally {
       setLoading(false);
     }
   }
