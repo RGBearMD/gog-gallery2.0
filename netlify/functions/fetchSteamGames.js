@@ -64,16 +64,13 @@ export async function handler(event) {
     // --- Parsing robusto con cheerio ---
     const $ = cheerio.load(xmlText, { xmlMode: true });
 
-    // Rilevamento profilo/lista giochi PRIVATA
-    const errorText = $("error").text().toLowerCase();
-    const bodyText = xmlText.toLowerCase();
-    const isPrivate =
-      $("games").length === 0 ||
-      errorText.includes("private") ||
-      errorText.includes("could not find") ||
-      bodyText.includes("the specified profile could not be found") ||
-      bodyText.includes("this profile is private") ||
-      bodyText.includes("game details are private");
+    // ✅ CHECK PRIVACY PRECISO (solo tag <error> o assenza di <games>)
+    const errorTag = $("error").text().trim();
+    const hasGamesTag = $("games game").length > 0;
+    
+    const isPrivate = 
+      errorTag.length > 0 || 
+      !hasGamesTag;
 
     if (isPrivate) {
       return {
