@@ -98,23 +98,15 @@ function App() {
       if (DEV_MOCK) {
         data = mockGames;
       } else if (platform === "steam") {
-        // Chiamata alla Netlify function
         const res = await fetch(`/.netlify/functions/fetchSteamGames?user=${encodeURIComponent(username)}`);
-        
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          console.error("Risposta ricevuta da Netlify:", text);
-          throw new Error("La Netlify Function di Steam ha restituito HTML anziché JSON. Verifica che 'netlify dev' sia attivo in locale.");
-        }
+        const json = await res.json();
 
-      const json = await res.json();
-        if (!res.ok) {
-          throw new Error(json.error || "Errore durante l'importazione da Steam.");
+        if (!res.ok || !json.games || json.games.length === 0) {
+          throw new Error(json.error || "Nessun gioco trovato o profilo privato.");
         }
-        data = json.games || [];
+        data = json.games;
       } else {
-        // Chiamata GOG
+        // Chiamata a GOG
         data = await getAllGames(username);
       }
 
