@@ -6,6 +6,8 @@ import GameIndex from "./components/GameIndex";
 import GameStrip from "./components/GameStrip";
 import PublicProfileHelpModal from "./components/PublicProfileHelpModal";
 
+const APP_VERSION = "v3.0.1";
+
 const mockGames = [
   {
     id: "1",
@@ -330,7 +332,12 @@ function App() {
           >
             ⚙️ Sviluppo - Mock Mode: {DEV_MOCK ? "ATTIVO" : "DISATTIVATO"}
           </button>
+          <div className="w-full text-center py-4 border-t border-zinc-800 text-zinc-500 text-[10px]">
+            <p>GOG & Steam Gallery • Version <span className="font-mono text-purple-400 font-bold">{APP_VERSION}</span></p>
+          </div>
         </footer>
+        
+        
       )}
 
       <GameModal key={selectedGame?.id} game={selectedGame} onClose={() => setSelectedGame(null)} />
