@@ -92,8 +92,7 @@ export default function GameStrip({ games, onSelect }) {
                 // Determina gli screenshot reali specifici di questo gioco
                 const currentScreenshots =
                     gameScreenshotsMap[game.id] ||
-                    (game.screenshots && game.screenshots.length > 0 ? game.screenshots : [game.cover])
-                    ).slice(0, 4);
+                    (game.screenshots && game.screenshots.length > 0 ? game.screenshots : [game.cover]);
 
                 return (
                     <div
@@ -149,10 +148,10 @@ export default function GameStrip({ games, onSelect }) {
                                         Caricamento screenshot in corso...
                                     </div>
                                 ) : (
-                                    currentScreenshots.map((src, idx) => (
+                                    currentScreenshots.slice(0, 4).map((src, idx) => (
                                         <div
                                             key={idx}
-                                            onClick={(e) => openLightbox(e, currentScreenshots, idx)}
+                                            onClick={(e) => openLightbox(e, currentScreenshots.slice(0, 4), idx)}
                                             className="relative h-full bg-zinc-950 rounded-md overflow-hidden cursor-pointer border border-zinc-800 group/shot"
                                         >
                                             <img
