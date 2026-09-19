@@ -1,127 +1,126 @@
 // netlify/functions/fetchSteamGames.js
-import * as cheerio from "cheerio";
-
 export async function handler(event) {
   try {
-    let input = (event.queryStringParameters?.user || "").trim().replace(/\/$/, "");
+    const user = (event.queryStringParameters?.user || "").trim().replace(/\/$/, "");
+    const apiKey = (event.queryStringParameters?.key || "").trim();
 
-    if (!input) {
+    if (!user || !apiKey) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Inserisci un ID o username Steam." }),
-      };
-    }
-
-    // --- Risoluzione vanity URL / SteamID a 64 bit ---
-    let steamIdOrVanity = input;
-    let isFullId = false;
-
-    if (input.includes("steamcommunity.com/id/")) {
-      steamIdOrVanity = input.split("steamcommunity.com/id/")[1].split("/")[0];
-    } else if (input.includes("steamcommunity.com/profiles/")) {
-      steamIdOrVanity = input.split("steamcommunity.com/profiles/")[1].split("/")[0];
-      isFullId = true;
-    } else if (/^\d{17}$/.test(input)) {
-      isFullId = true;
-    } else if (/^\d+$/.test(input)) {
-      // SteamID a 64 bit anche senza padding
-      isFullId = true;
-    }
-
-    const targetUrl = isFullId
-      ? `https://steamcommunity.com/profiles/${steamIdOrVanity}/games?xml=1`
-      : `https://steamcommunity.com/id/${steamIdOrVanity}/games?xml=1`;
-
-    const response = await fetch(targetUrl, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
-      },
-    });
-
-    if (!response.ok) {
-      return {
-        statusCode: response.status === 404 ? 404 : 502,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          error: `Steam ha risposto con status HTTP ${response.status}. Verifica l'username o l'ID.`,
+          error: "Inserisci sia la Steam Web API Key che l'username o SteamID.",
         }),
       };
     }
 
-    const xmlText = await response.text();
+    // ── 1. Risolvi vanity URL → SteamID64 ──────────────────────
+    let steamId64 = "";
 
-    if (!xmlText || xmlText.trim().length === 0) {
-      return {
-        statusCode: 502,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Risposta vuota da Steam. Riprova più tardi." }),
-      };
+    // Se è già un SteamID64 puro (17 cifre)
+    if (/^\d{17}$/.test(user)) {
+      steamId64 = user;
+    } else {
+      // Estrai il vanity name da URL completi o usa l'input diretto
+      let vanity = user;
+      if (user.includes("steamcommunity.com/id/")) {
+        vanity = user.split("steamcommunity.com/id/")[1].split("/")[0];
+      } else if (user.includes("steamcommunity.com/profiles/")) {
+        steamId64 = user.split("steamcommunity.com/profiles/")[1].split("/")[0];
+      }
+
+      // Se non abbiamo ancora lo SteamID64, risolviamo il vanity
+      if (!steamId64) {
+        const resolveUrl = `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${encodeURIComponent(apiKey)}&vanityurl=${encodeURIComponent(vanity)}`;
+        const resolveRes = await fetch(resolveUrl);
+
+        if (!resolveRes.ok) {
+          return {
+            statusCode: 502,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              error: `Errore risoluzione SteamID (HTTP ${resolveRes.status}). Verifica la API Key.`,
+            }),
+          };
+        }
+
+        const resolveData = await resolveRes.json();
+        if (resolveData.response?.success === 1) {
+          steamId64 = resolveData.response.steamid;
+        }
+      }
     }
 
-    // --- Parsing robusto con cheerio ---
-    const $ = cheerio.load(xmlText, { xmlMode: true });
-
-    // ✅ CHECK PRIVACY PRECISO (solo tag <error> o assenza di <games>)
-    const errorTag = $("error").text().trim();
-    const hasGamesTag = $("games game").length > 0;
-    
-    const isPrivate = 
-      errorTag.length > 0 || 
-      !hasGamesTag;
-
-    if (isPrivate) {
+    if (!steamId64 || !/^\d{17}$/.test(steamId64)) {
       return {
         statusCode: 400,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           error:
-            "Profilo o lista giochi PRIVATA. Su Steam vai in Modifica Profilo → Impostazioni Privacy e imposta 'Dettagli dei giochi' su PUBBLICO.",
+            "Impossibile risolvere lo SteamID64. Verifica l'username Steam o inserisci direttamente lo SteamID64 numerico (17 cifre).",
         }),
       };
     }
 
-    // --- Estrazione giochi ---
-    const games = [];
-    $("game").each((_, el) => {
-      const $game = $(el);
-      const appId = $game.find("appID").text().trim();
-      const name =
-        $game.find("name").text().trim() ||
-        $game.find("name").html()?.replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1").trim() ||
-        "";
-      const hoursRaw = $game.find("hoursOnRecord").text().trim().replace(",", ".");
-      const hoursPlayed = hoursRaw ? parseFloat(hoursRaw) : 0;
+    // ── 2. Recupera i giochi posseduti ─────────────────────────
+    const gamesUrl = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${encodeURIComponent(apiKey)}&steamid=${steamId64}&include_appinfo=true&include_played_free_games=true&format=json`;
+    const gamesRes = await fetch(gamesUrl);
 
-      if (!appId || !name) return;
+    if (!gamesRes.ok) {
+      if (gamesRes.status === 403) {
+        return {
+          statusCode: 403,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            error: "API Key non valida o revocata. Rigenera la chiave su steamcommunity.com/dev/apikey",
+          }),
+        };
+      }
+      return {
+        statusCode: 502,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          error: `Steam API ha risposto con HTTP ${gamesRes.status}.`,
+        }),
+      };
+    }
 
-      games.push({
-        id: `steam-${appId}`,
-        appId,
-        title: name,
-        playtime: Math.round(hoursPlayed * 60),
-        hoursOnRecord: hoursPlayed,
-        cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`,
-        screenshots: [
-          `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_1.jpg`,
-          `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/ss_2.jpg`,
-        ],
-        platform: "Steam",
-      });
-    });
+    const contentType = gamesRes.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const raw = await gamesRes.text();
+      console.error("Risposta non-JSON da Steam API:", raw);
+      return {
+        statusCode: 502,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Steam API ha restituito una risposta non valida." }),
+      };
+    }
 
-    if (games.length === 0) {
+    const gamesData = await gamesRes.json();
+    const rawGames = gamesData.response?.games || [];
+
+    if (rawGames.length === 0) {
       return {
         statusCode: 404,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           error:
-            "Nessun gioco trovato per questo utente. Verifica l'ID/username e che la lista giochi sia PUBBLICA su Steam.",
+            "Nessun gioco trovato. Verifica che lo SteamID sia corretto e che l'account possieda giochi.",
         }),
       };
     }
+
+    // ── 3. Mappa i giochi nel formato dell'app ─────────────────
+    const games = rawGames.map((g) => ({
+      id: `steam-${g.appid}`,
+      appId: g.appid,
+      title: g.name || `App ${g.appid}`,
+      playtime: g.playtime_forever || 0, // già in minuti
+      hoursOnRecord: Math.round(((g.playtime_forever || 0) / 60) * 10) / 10,
+      cover: `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`,
+      screenshots: [],
+      platform: "Steam",
+    }));
 
     return {
       statusCode: 200,
@@ -134,7 +133,7 @@ export async function handler(event) {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        error: error.message || "Impossibile recuperare la libreria Steam.",
+        error: error.message || "Errore imprevisto durante l'importazione Steam.",
       }),
     };
   }

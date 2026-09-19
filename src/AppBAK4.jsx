@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ★ aggiunto useEffect
 import GameGrid from "./components/GameGrid";
 import { getAllGames } from "./services/gogApi";
 import GameModal from "./components/GameModal";
@@ -15,8 +15,6 @@ const mockGames = [
     screenshots: [
       "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg",
       "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb4.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb5.jpg",
     ],
   },
   {
@@ -27,8 +25,6 @@ const mockGames = [
     screenshots: [
       "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8i.jpg",
       "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8j.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8k.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8l.jpg",
     ],
   },
   {
@@ -36,29 +32,19 @@ const mockGames = [
     title: "Deus Ex: Mankind Divided",
     cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co1r77.jpg",
     playtime: 12,
-    screenshots: [
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb4.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb5.jpg",
-    ],
+    screenshots: [],
   },
   {
     id: "4",
     title: "Hades",
     cover: "https://images.igdb.com/igdb/image/upload/t_cover_big/co2g7a.jpg",
     playtime: 45,
-    screenshots: [
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8i.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8j.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8k.jpg",
-      "https://images.igdb.com/igdb/image/upload/t_1080p/sc6v8l.jpg",
-    ],
+    screenshots: [],
   },
 ];
 
 function App() {
-  const [platform, setPlatform] = useState("gog"); // "gog" | "steam"
+  const [platform, setPlatform] = useState("gog");
   const [username, setUsername] = useState("");
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,6 +54,16 @@ function App() {
   const [DEV_MOCK, setDEV_MOCK] = useState(false);
   const [viewMode, setViewMode] = useState("strip");
   const [showHelp, setShowHelp] = useState(false);
+
+  // ★ Steam API Key con persistenza in localStorage
+  const [steamApiKey, setSteamApiKey] = useState(
+    () => localStorage.getItem("steamApiKey") || ""
+  );
+  useEffect(() => {
+    if (steamApiKey) {
+      localStorage.setItem("steamApiKey", steamApiKey);
+    }
+  }, [steamApiKey]);
 
   const hasGames = games.length > 0;
 
@@ -91,32 +87,35 @@ function App() {
   async function handleImport() {
     setLoading(true);
     setErrorMsg(null);
-
     try {
       let data = [];
-
       if (DEV_MOCK) {
         data = mockGames;
       } else if (platform === "steam") {
-        const res = await fetch(`/.netlify/functions/fetchSteamGames?user=${encodeURIComponent(username)}`);
-        const json = await res.json();
-
-        if (!res.ok || !json.games || json.games.length === 0) {
-          throw new Error(json.error || "Nessun gioco trovato o profilo privato.");
+        // ★ Passa sia user che key alla Netlify Function
+        const res = await fetch(
+          `/.netlify/functions/fetchSteamGames?user=${encodeURIComponent(username)}&key=${encodeURIComponent(steamApiKey)}`
+        );
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          console.error("Risposta ricevuta da Netlify:", text);
+          throw new Error(
+            "La Netlify Function di Steam ha restituito HTML anziché JSON. Verifica che 'netlify dev' sia attivo in locale."
+          );
         }
-        data = json.games;
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.error || "Errore durante l'importazione da Steam.");
+        }
+        data = json.games || [];
       } else {
-        // Chiamata a GOG
         data = await getAllGames(username);
       }
-
       const cleanData = Array.isArray(data) ? data : [];
-
-      // Rimozione duplicati
       const uniqueData = cleanData.filter(
         (game, index, self) => self.findIndex((g) => g.id === game.id) === index
       );
-
       setGames(uniqueData);
     } catch (e) {
       console.error("IMPORT ERROR:", e);
@@ -126,6 +125,9 @@ function App() {
       setLoading(false);
     }
   }
+
+  // ★ Validazione: per Steam servono sia key che username
+  const canImport = DEV_MOCK || (platform === "gog" ? username : username && steamApiKey);
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white flex flex-col font-sans relative pb-12">
@@ -144,35 +146,34 @@ function App() {
             GOG & Steam Gallery
           </h1>
         </div>
-
-        {/* CONTROLLI IN UNA RIGA */}
         {hasGames && (
           <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto pb-1 no-scrollbar animate-fade-in">
             <button
               onClick={() => setViewMode("strip")}
               className={`px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center ${
-                viewMode === "strip" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
+                viewMode === "strip"
+                  ? "bg-purple-600 text-white"
+                  : "bg-zinc-800 text-zinc-400"
               }`}
             >
               ☰ Strip
             </button>
-
             <button
               onClick={() => setViewMode("grid")}
               className={`px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap transition-colors flex-1 text-center ${
-                viewMode === "grid" ? "bg-purple-600 text-white" : "bg-zinc-800 text-zinc-400"
+                viewMode === "grid"
+                  ? "bg-purple-600 text-white"
+                  : "bg-zinc-800 text-zinc-400"
               }`}
             >
               ⚃ Cards
             </button>
-
             <button
               onClick={downloadList}
               className="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap transition"
             >
               📥 Lista
             </button>
-
             <button
               onClick={pickRandomGame}
               className="bg-purple-600 hover:bg-purple-700 text-xs font-bold px-3 py-1.5 rounded whitespace-nowrap transition"
@@ -191,7 +192,6 @@ function App() {
           isOpen={isMobileIndexOpen}
           onClose={() => setIsMobileIndexOpen(false)}
         />
-
         <main className="flex-1 p-4 flex flex-col justify-center max-w-[1600px] mx-auto w-full">
           {!hasGames ? (
             <div className="text-center py-6 my-auto max-w-xl mx-auto w-full px-2 animate-fade-in">
@@ -240,16 +240,37 @@ function App() {
 
               {/* FORM DI IMPORTAZIONE */}
               <div className="flex flex-col gap-2 bg-zinc-950 p-2 rounded-xl border border-zinc-800 shadow-xl">
+                {/* ★ Campo Steam API Key (visibile solo per Steam) */}
+                {platform === "steam" && !DEV_MOCK && (
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="password"
+                      className="flex-1 p-3 rounded-lg bg-zinc-900 text-white placeholder-zinc-500 border border-transparent focus:border-sky-700 outline-none text-sm transition"
+                      placeholder="Steam Web API Key (es. A1B2C3D4E5F6...)"
+                      value={steamApiKey}
+                      onChange={(e) => setSteamApiKey(e.target.value)}
+                    />
+                    <a
+                      href="https://steamcommunity.com/dev/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors text-left pl-1"
+                    >
+                      🔑 Ottieni una API Key gratuita su steamcommunity.com/dev/apikey →
+                    </a>
+                  </div>
+                )}
+
                 <input
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && (username || DEV_MOCK)) handleImport();
+                    if (e.key === "Enter" && canImport) handleImport();
                   }}
                   className="flex-1 p-3 rounded-lg bg-zinc-900 text-white placeholder-zinc-500 border border-transparent focus:border-zinc-700 outline-none text-sm transition"
                   placeholder={
                     DEV_MOCK
                       ? `Modalità Mock attiva (${platform.toUpperCase()}), clicca Importa`
                       : platform === "steam"
-                      ? "Username Steam, SteamID o URL profilo (es. Shuren-aihi)..."
+                      ? "Username Steam o SteamID64 (es. Shuren-aihi)..."
                       : "Inserisci il tuo username GOG..."
                   }
                   value={username}
@@ -258,14 +279,16 @@ function App() {
                 />
                 <button
                   onClick={handleImport}
-                  disabled={loading || (!username && !DEV_MOCK)}
+                  disabled={loading || !canImport}
                   className={`px-6 py-3 rounded-lg font-bold text-sm transition-all disabled:bg-zinc-800 disabled:text-zinc-600 ${
                     platform === "gog"
                       ? "bg-purple-600 hover:bg-purple-500"
                       : "bg-sky-600 hover:bg-sky-500"
                   }`}
                 >
-                  {loading ? "Importazione..." : `Importa Libreria ${platform.toUpperCase()}`}
+                  {loading
+                    ? "Importazione..."
+                    : `Importa Libreria ${platform.toUpperCase()}`}
                 </button>
               </div>
 
@@ -275,7 +298,6 @@ function App() {
                   ⚠️ {errorMsg}
                 </div>
               )}
-
               <div className="mt-4">
                 <button
                   type="button"
@@ -290,7 +312,8 @@ function App() {
             <div className="space-y-4 w-full h-full justify-start my-0">
               <div className="border-b border-zinc-800 pb-2 flex justify-between items-center">
                 <h2 className="text-xs font-medium tracking-wide text-zinc-400">
-                  Nella tua libreria ci sono {games.length} giochi ({platform.toUpperCase()})
+                  Nella tua libreria ci sono {games.length} giochi (
+                  {platform.toUpperCase()})
                 </h2>
                 <button
                   onClick={() => setGames([])}
@@ -299,7 +322,6 @@ function App() {
                   Cambia utente / piattaforma
                 </button>
               </div>
-
               {viewMode === "strip" ? (
                 <GameStrip games={games} onSelect={setSelectedGame} />
               ) : (
@@ -324,9 +346,16 @@ function App() {
           </button>
         </footer>
       )}
-
-      <GameModal key={selectedGame?.id} game={selectedGame} onClose={() => setSelectedGame(null)} />
-      <PublicProfileHelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} platform={platform} />
+      <GameModal
+        key={selectedGame?.id}
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+      />
+      <PublicProfileHelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        platform={platform}
+      />
     </div>
   );
 }
