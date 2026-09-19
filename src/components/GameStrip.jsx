@@ -92,7 +92,8 @@ export default function GameStrip({ games, onSelect }) {
                 // Determina gli screenshot reali specifici di questo gioco
                 const currentScreenshots =
                     gameScreenshotsMap[game.id] ||
-                    (game.screenshots && game.screenshots.length > 0 ? game.screenshots : [game.cover]);
+                    (game.screenshots && game.screenshots.length > 0 ? game.screenshots : [game.cover])
+                    ).slice(0, 4);
 
                 return (
                     <div

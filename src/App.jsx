@@ -90,32 +90,52 @@ function App() {
   };
 
   // ★ NUOVO: Fetch screenshot on-demand (Lazy Loading)
-  const handleGameSelect = async (game) => {
-    setSelectedGame(game);
+// All'interno di function App() in src/App.jsx
 
-    // Se il gioco non ha screenshot, proviamo a scaricarli dall'API pubblica di Steam
-    if ((!game.screenshots || game.screenshots.length === 0) && game.appId) {
-      try {
-        const res = await fetch(`https://store.steampowered.com/api/appdetails?appids=${game.appId}`);
-        const data = await res.json();
-        const appData = data[game.appId];
-        
-        if (appData?.success && appData.data?.screenshots) {
-          const newScreenshots = appData.data.screenshots.map(s => s.path_full);
-          
-          // Aggiorna il gioco selezionato immediatamente
-          setSelectedGame(prev => ({ ...prev, screenshots: newScreenshots }));
-          
-          // Aggiorna anche l'array principale in background per i prossimi click
-          setGames(prevGames => 
-            prevGames.map(g => g.id === game.id ? { ...g, screenshots: newScreenshots } : g)
-          );
-        }
-      } catch (err) {
-        console.warn(`Impossibile recuperare screenshot per: ${game.title}`, err);
+  const handleGameSelect = async (game) => {
+  // 1. Mostra subito il modal con i dati base (cover, titolo, ecc.)
+  setSelectedGame(game);
+
+  // 2. Lazy loading degli screenshot: solo se mancano E abbiamo un appId valido
+  if ((!game.screenshots || game.screenshots.length === 0) && game.appId) {
+    try {
+      const res = await fetch(`/.netlify/functions/fetchSteamDetails?appId=${game.appId}`);
+      
+      // ★ Controllo di robustezza sulla risposta della Netlify Function
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("La Netlify Function ha restituito un formato non valido.");
       }
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Errore nel recupero dettagli Steam.");
+      }
+
+      const appData = data[game.appId];
+      
+      // 3. Estrai e limita gli screenshot (Max 9 per info/modal)
+      if (appData?.success && appData.data?.screenshots) {
+        const newScreenshots = appData.data.screenshots
+          .slice(0, 9) // ★ Limite massimo 9 screenshot per performance e layout
+          .map((s) => s.path_full);
+
+        // Aggiorna immediatamente il gioco selezionato (il Modal si aggiornerà in tempo reale)
+        setSelectedGame((prev) => ({ ...prev, screenshots: newScreenshots }));
+
+        // Aggiorna l'array principale in background: i click successivi su questo gioco saranno istantanei
+        setGames((prevGames) =>
+          prevGames.map((g) =>
+            g.id === game.id ? { ...g, screenshots: newScreenshots } : g
+          )
+        );
+      }
+    } catch (err) {
+      // Fail-silently: non bloccare l'UX se gli screenshot non si caricano
+      console.warn(`Impossibile recuperare screenshot per: ${game.title}`, err);
     }
-  };
+  }
+};
 
   async function handleImport() {
     setLoading(true);

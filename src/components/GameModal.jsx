@@ -120,23 +120,26 @@ export default function GameModal({ game, onClose }) {
                             </div>
 
                             {/* SCREENSHOT GRID */}
+{/* SCREENSHOT GRID */}
                             <div>
                                 <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">
-                                    {loadingScreenshots ? "Caricamento screenshot..." : `Screenshot (${screenshots.length})`}
+                                    {loadingScreenshots 
+                                        ? "Caricamento screenshot..." 
+                                        : `Screenshot (${(game.screenshots || screenshots || []).slice(0, 9).length})`}
                                 </h3>
 
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {screenshots.map((src, index) => (
+                                    {(game.screenshots || screenshots || []).slice(0, 6).map((src, idx) => (
                                         <div
-                                            key={index}
-                                            onClick={() => setActiveScreenshot(src)}
+                                            key={idx}
+                                            onClick={() => setActiveScreenshot ? setActiveScreenshot(src) : null}
                                             className="aspect-video bg-zinc-950 rounded-md overflow-hidden cursor-pointer border border-zinc-800 hover:border-purple-500 transition-all duration-300 group relative"
                                         >
                                             <img
                                                 src={src}
-                                                alt={`Screenshot ${index + 1}`}
+                                                alt={`Screenshot ${idx + 1}`}
                                                 loading="lazy"
-                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500 rounded-lg"
                                             />
 
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
