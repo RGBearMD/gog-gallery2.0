@@ -23,7 +23,7 @@
       const title = img ? img.getAttribute('alt').trim() : link.innerText.trim();
       
       let hours = 0;
-      const hoursMatch = card.innerText.match(/(?:TOTAL PLAYED\s*)?([\d\.,]+)\s*hours?/i);
+      const hoursMatch = card.innerText.match(/(?:TOTAL PLAYED\s*)?([\d.,]+)\s*hours?/i);
       if (hoursMatch) {
         hours = parseFloat(hoursMatch[1].replace(',', '.'));
       }
