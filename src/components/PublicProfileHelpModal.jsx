@@ -23,7 +23,7 @@ export default function PublicProfileHelpModal({ isOpen, onClose, platform = "go
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-fade-in" onClick={onClose}>
       <div className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-line/70 bg-panel p-6 md:p-8" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <h2 className="text-xl font-bold md:text-2xl">{isGog ? "Importare la libreria GOG" : "Creare il file steam_games.json"}</h2>
@@ -39,7 +39,7 @@ export default function PublicProfileHelpModal({ isOpen, onClose, platform = "go
         ) : (
           <>
             <p className="mb-4 text-sm text-muted">
-              Steam non permette più di leggere la libreria da un profilo pubblico. Si crea quindi un file con un piccolo script che gira nel tuo browser, poi lo carichi qui. Lo script non è un file da caricare: va incollato nella console del browser.
+              Si crea un file con un piccolo script che gira nel tuo browser, poi lo carichi qui. Lo script non è un file da caricare: va incollato nella console del browser (da PC).
             </p>
             <ol className="space-y-4">
               <Step n="1" title="Apri la tua libreria Steam">Dal browser su PC, vai alla pagina <strong>Tutti i giochi</strong> della libreria, con il login fatto.</Step>
@@ -51,6 +51,7 @@ export default function PublicProfileHelpModal({ isOpen, onClose, platform = "go
                 <br />Incolla nella console e premi Invio. La pagina scorre da sola: attendi che finisca.
               </Step>
               <Step n="4" title="Carica il file">Il browser scarica <strong>steam_games.json</strong>. Torna qui e usa il pulsante <strong>Carica steam_games.json</strong>.</Step>
+              <Step n="5" title="Usalo anche sul cellulare">Questi passaggi si fanno <strong>una sola volta, da PC</strong>. Poi apri il menu ☰ e scegli <strong>Usa su un altro dispositivo</strong>: ottieni un codice. Sul telefono, nella schermata iniziale, tocca <strong>Ho un codice</strong> e inseriscilo.</Step>
             </ol>
             <p className="mt-5 rounded-xl border border-spark/30 bg-spark/10 p-3 text-xs text-muted">
               Incolla nella console solo codice di cui ti fidi: puoi leggere questo script prima di usarlo su <a href="/steam-export.js" target="_blank" rel="noreferrer" className="text-spark underline">/steam-export.js</a>. Il file resta nel tuo browser; al server arrivano solo gli ID dei giochi di cui apri gli screenshot.
