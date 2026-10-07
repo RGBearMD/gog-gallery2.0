@@ -11,7 +11,7 @@ export async function getAllGames(username) {
         firstData = JSON.parse(text);
     } catch {
         console.error("Risposta non JSON:", text);
-        throw new Error("API non valida / function rotta.\nRisposta ricevuta:\n${text}");
+        throw new Error("Risposta non valida da GOG: controlla che l'username sia corretto e il profilo pubblico.");
     }
 
     const pages = firstData.pages;
@@ -41,6 +41,7 @@ export async function getAllGames(username) {
     return results.flatMap((data) =>
         data._embedded.items.map((item) => ({
             id: item.game.id,
+            platform: "GOG",
             title: item.game.title,
             cover: item.game.image,
             rawGame: item.game,

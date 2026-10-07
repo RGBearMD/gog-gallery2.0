@@ -1,60 +1,33 @@
+// GOG: restituisce screenshot come { thumb, full }.
+// thumb = formato medio (griglie), full = formato grande (solo ingrandimento).
+const THUMB = ["ggvgm", "ggvgt", "ggvgl"];
+const FULL = ["ggvgl", "ggvgm_2x", "ggvgm"];
+
+const pick = (shot, order) =>
+    order.map((f) => shot.formatted_images?.find((i) => i.formatter_name === f)).find(Boolean)?.image_url;
+
+const json = (status, body, cache = "no-store") =>
+    new Response(JSON.stringify(body), {
+        status,
+        headers: { "Content-Type": "application/json", "Cache-Control": cache },
+    });
+
 export default async (req) => {
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    const id = new URL(req.url).searchParams.get("id");
+    if (!/^\d+$/.test(id || "")) return json(400, { error: "ID GOG non valido." });
 
     try {
-        const res = await fetch(
-            `https://api.gog.com/products/${id}?expand=screenshots`
-        );
-
+        const res = await fetch(`https://api.gog.com/products/${id}?expand=screenshots`);
+        if (!res.ok) return json(res.status, { error: `GOG ha risposto ${res.status}` });
         const data = await res.json();
 
-        // Priorità alle immagini più leggere per ridurre
-// traffico dati e velocizzare il caricamento.
-const PRIORITY = [
-    "ggvgl_2x",
-    "ggvgm_2x",
-    "ggvgl",
-    "ggvgm",
-    "ggvgt"
-];
+        const screenshots = (data.screenshots || [])
+            .map((s) => ({ thumb: pick(s, THUMB), full: pick(s, FULL) }))
+            .filter((s) => s.thumb)
+            .map((s) => ({ thumb: s.thumb, full: s.full || s.thumb }));
 
-console.log(
-    "GAME",
-    id,
-    "SCREENSHOTS",
-    data.screenshots?.length || 0
-);
-
-const screenshots = (data.screenshots || [])
-    .map((shot) => {
-        const best = PRIORITY
-            .map((format) =>
-                shot.formatted_images?.find(
-                    (img) => img.formatter_name === format
-                )
-            )
-            .find(Boolean);
-
-        return best?.image_url;
-    })
-    .filter(Boolean);
-
-        return new Response(
-            JSON.stringify({ screenshots }),
-            {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            }
-        );
-
+        return json(200, { screenshots }, "public, max-age=86400, s-maxage=86400");
     } catch (e) {
-        return new Response(
-            JSON.stringify({
-                error: e.message
-            }),
-            { status: 500 }
-        );
+        return json(500, { error: e.message });
     }
 };

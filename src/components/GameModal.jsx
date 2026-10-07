@@ -1,180 +1,56 @@
-import { useState, useEffect } from "react";
-
-// Screenshot di riserva ad alta risoluzione in caso l'API non restituisca immagini
-const FALLBACK_SCREENSHOTS = [
-    "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb2.jpg",
-    "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb3.jpg",
-    "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb4.jpg",
-    "https://images.igdb.com/igdb/image/upload/t_1080p/sc7xb5.jpg"
-];
+import { useEffect, useState } from "react";
+import Cover from "./Cover";
+import Lightbox from "./Lightbox";
+import { Icon } from "./Icons";
+import { useGameShots, hoursPlayed, isSteam } from "../services/screenshots";
 
 export default function GameModal({ game, onClose }) {
-    const [activeScreenshot, setActiveScreenshot] = useState(null);
-    const [screenshots, setScreenshots] = useState(
-        () => (game?.screenshots && game.screenshots.length > 0) 
-            ? game.screenshots 
-            : [game?.cover].filter(Boolean)
-    );
-    const [loadingScreenshots, setLoadingScreenshots] = useState(true);
+  const { shots, loading } = useGameShots(game);
+  const [zoom, setZoom] = useState(null);
 
-    useEffect(() => {
-        if (!game) return;
+  useEffect(() => {
+    if (!game) return;
+    const onKey = (e) => e.key === "Escape" && zoom === null && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [game, zoom, onClose]);
 
-        let cancelled = false;
+  if (!game) return null;
+  const steam = isSteam(game);
 
-        async function load() {
-            setLoadingScreenshots(true);
-            
-            // Se il gioco ha già screenshot caricati (es. dai Mock o stato globale), li usiamo
-            if (game.screenshots && game.screenshots.length > 1) {
-                setScreenshots(game.screenshots);
-                setLoadingScreenshots(false);
-                return;
-            }
+  return (
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+        <div className="custom-scrollbar relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-line/70 bg-panel p-5 shadow-2xl md:p-8" onClick={(e) => e.stopPropagation()}>
+          <button onClick={onClose} aria-label="Chiudi" className="absolute right-3 top-3 rounded-full bg-black/40 p-2.5 hover:bg-raised"><Icon name="close" /></button>
 
-            try {
-                const res = await fetch(
-                    `/.netlify/functions/gameDetails?id=${game.id}`
-                );
+          <h2 className="pr-10 text-2xl font-bold tracking-tight md:text-3xl">{game.title}</h2>
+          <div className="mb-5 mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className={`rounded-full px-2.5 py-0.5 font-semibold ${steam ? "bg-steam/15 text-steam" : "bg-gog/15 text-gog"}`}>{steam ? "Steam" : "GOG"}</span>
+            {game.playtime > 0 && <span className="rounded-full bg-raised px-2.5 py-0.5 text-muted">{hoursPlayed(game)} h giocate</span>}
+          </div>
 
-                const data = await res.json();
+          <div className="grid gap-6 md:grid-cols-[200px_1fr]">
+            <div className="mx-auto aspect-[2/3] w-full max-w-[200px] overflow-hidden rounded-xl border border-line bg-ink md:mx-0"><Cover game={game} /></div>
 
-                if (!cancelled) {
-                    if (data.screenshots && data.screenshots.length > 0) {
-                        setScreenshots(data.screenshots.slice(0, 6));
-                    } else {
-                        // Fallback se l'API risponde senza screenshot
-                        setScreenshots(FALLBACK_SCREENSHOTS);
-                    }
-                }
-            } catch (e) {
-                console.error("Screenshot fetch error:", e);
-
-                if (!cancelled) {
-                    // Fallback in caso di errore di rete / Netlify function
-                    setScreenshots(
-                        game.cover ? [game.cover, ...FALLBACK_SCREENSHOTS.slice(1)] : FALLBACK_SCREENSHOTS
-                    );
-                }
-            } finally {
-                if (!cancelled) setLoadingScreenshots(false);
-            }
-        }
-
-        load();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [game]);
-
-    if (!game) return null;
-
-    console.log("MODAL GAME:", game.id, game.title);
-
-    return (
-        <>
-            {/* OVERLAY PRINCIPALE */}
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-                onClick={onClose}
-            >
-                <div
-                    className="relative w-full max-w-5xl max-h-[90vh] bg-zinc-900 border border-zinc-800 rounded-xl overflow-y-auto shadow-2xl custom-scrollbar"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Pulsante chiusura */}
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 z-20 bg-black/50 hover:bg-zinc-800 text-white w-10 h-10 rounded-full flex items-center justify-center transition"
-                    >
-                        ✕
-                    </button>
-
-                    {/* HEADER GIOCO */}
-                    <div className="p-6 md:p-8 relative z-10">
-                        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-2">
-                            {game.title}
-                        </h2>
-
-                        <div className="flex items-center gap-3 text-xs text-zinc-400 mb-6">
-                            <span className="text-zinc-500 font-mono">ID: {game.id}</span>
-                            {game.playtime !== undefined && (
-                                <span className="text-purple-400 font-semibold bg-purple-950/60 border border-purple-800/50 px-2 py-0.5 rounded">
-                                    ⏱️ {game.playtime}h giocate
-                                </span>
-                            )}
-                        </div>
-
-                        {/* LAYOUT: COVER + SCREENSHOT */}
-                        <div className="grid md:grid-cols-[220px_1fr] gap-6">
-                            {/* COVER */}
-                            <div className="w-full max-w-[220px] mx-auto md:mx-0">
-                                <div className="aspect-[2/3] bg-zinc-950 rounded-lg overflow-hidden border border-zinc-700 shadow-md">
-                                    <img
-                                        src={game.cover}
-                                        alt={game.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* SCREENSHOT GRID */}
-{/* SCREENSHOT GRID */}
-                            <div>
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">
-                                    {loadingScreenshots 
-                                        ? "Caricamento screenshot..." 
-                                        : `Screenshot (${(game.screenshots || screenshots || []).slice(0, 9).length})`}
-                                </h3>
-
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {(game.screenshots || screenshots || []).slice(0, 6).map((src, idx) => (
-                                        <div
-                                            key={idx}
-                                            onClick={() => setActiveScreenshot ? setActiveScreenshot(src) : null}
-                                            className="aspect-video bg-zinc-950 rounded-md overflow-hidden cursor-pointer border border-zinc-800 hover:border-purple-500 transition-all duration-300 group relative"
-                                        >
-                                            <img
-                                                src={src}
-                                                alt={`Screenshot ${idx + 1}`}
-                                                loading="lazy"
-                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-500 rounded-lg"
-                                            />
-
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                                <span className="text-xs bg-black/70 px-2.5 py-1 rounded text-white font-bold backdrop-blur">
-                                                    Ingrandisci 🔍
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div>
+              <h3 className="mb-3 text-sm font-semibold text-muted">
+                {loading ? "Caricamento screenshot…" : `Screenshot (${shots.length})`}
+              </h3>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {loading && Array.from({ length: 6 }, (_, i) => <div key={i} className="aspect-video animate-pulse rounded-lg bg-raised" />)}
+                {!loading && shots.slice(0, 9).map((s, i) => (
+                  <button key={i} onClick={() => setZoom(i)} className="aspect-video overflow-hidden rounded-lg border border-line/60 bg-ink hover:border-spark">
+                    <img src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" />
+                  </button>
+                ))}
+              </div>
+              {!loading && shots.length === 0 && <p className="text-sm text-muted">Nessuno screenshot disponibile per questo gioco.</p>}
             </div>
-
-            {/* LIGHTBOX (FULLSCREEN VIEWER) */}
-            {activeScreenshot && (
-                <div
-                    className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4 animate-fade-in cursor-zoom-out"
-                    onClick={() => setActiveScreenshot(null)}
-                >
-                    <button 
-                        onClick={() => setActiveScreenshot(null)}
-                        className="absolute top-4 right-4 text-white text-xl bg-zinc-900/80 p-3 rounded-full hover:bg-zinc-800 border border-zinc-700"
-                    >
-                        ✕
-                    </button>
-                    <img
-                        src={activeScreenshot}
-                        alt="Screenshot Ingrandito"
-                        className="max-w-full max-h-[95vh] rounded shadow-2xl object-contain animate-scale-up"
-                    />
-                </div>
-            )}
-        </>
-    );
+          </div>
+        </div>
+      </div>
+      {zoom !== null && shots[zoom] && <Lightbox shots={shots} index={zoom} onIndex={setZoom} onClose={() => setZoom(null)} />}
+    </>
+  );
 }
