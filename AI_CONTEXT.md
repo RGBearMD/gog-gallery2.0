@@ -11,10 +11,12 @@ Leggi questo file **prima** di toccare il codice. Riassume cosa fa l'app, com'è
 React 19 · Vite 8 · Tailwind CSS v4 (`@tailwindcss/vite`) · ESLint 10 (`eslint-plugin-react-hooks` 7, `react-refresh`) · Netlify (hosting + Functions ESM, `"type": "module"`) · `@netlify/blobs`.
 
 ```
-npm run dev      # solo frontend. Le Netlify Functions NON girano: serve `netlify dev`
+npm run dev      # sito + funzioni IN LOCALE (plugin in vite.config.js): niente Netlify, niente crediti
 npm run build    # vite build
-npm run lint     # eslint . (copre anche public/ e netlify/). Attualmente PULITO
+npm start        # dopo il build: server Node autonomo (sito + funzioni) su http://localhost:8888 (PORT, DATA_DIR)
+npm run lint     # eslint . (copre anche public/, netlify/, server/, lib/). Attualmente PULITO
 ```
+Per provare dal telefono sulla stessa rete Wi-Fi: `npm run dev -- --host` (oppure `npm start`, che ascolta su tutte le interfacce).
 
 Test usato finora: Playwright (Chromium) con viewport mobile 390×844, giochi finti in `localStorage`, funzioni Netlify intercettate con `page.route`.
 
@@ -45,12 +47,16 @@ src/services/
   genres.js                      hook useGenres: scarica i generi in background con cache
   sync.js                        client del trasferimento con codice
   scroll.js                      scrollToGame (scroll + flash di evidenziazione)
-netlify/functions/
+lib/store.js                     archivio chiave-valore per `sync`: Netlify Blobs su Netlify, file JSON in `.data/` altrove (YGG_STORAGE=file)
+server/functions.js              esegue netlify/functions/*.js fuori da Netlify (usato da Vite e da server/index.js)
+server/index.js                  server Node autonomo: serve dist/ + funzioni (utilizzabile su Render/Railway/Fly/VPS/locale)
+vite.config.js                   include il plugin `localFunctions` (monta le funzioni in `npm run dev` e `npm run preview`)
+netlify/functions/               TUTTE nella forma standard `export default async (Request) => Response`
   gog.js                         proxy di gog.com/u/{user}/games/stats?page=
   gameDetails.js                 GOG: ?id=<id numerico> → { screenshots: [{thumb, full}] }
   fetchSteamDetails.js           Steam: ?appId= → { screenshots: [{thumb, full}] }
   fetchGenres.js                 ?ids=steam-620,730,... (max 8) → { genres: { id: string[]|null }, rateLimited }
-  sync.js                        POST {platform, games} → {code}; GET ?code= → {platform, games} (Netlify Blobs)
+  sync.js                        POST {platform, games} → {code}; GET ?code= → {platform, games} (archivio: lib/store.js)
 ```
 
 ## 3. Modello dati e flussi
@@ -69,7 +75,7 @@ netlify/functions/
 
 **Generi:** `useGenres` scarica 4 giochi ogni 5 s via `fetchGenres` (Steam: campo `genres` dell'API store; GOG: tag di `api.gog.com/v2/games/{id}`, best effort), backoff 90 s se Steam limita. I risultati restano per sempre in localStorage. In `App.jsx` `SKIP_GENRES` nasconde descrittori non-genere (Violent, Gore, Early Access, …). Filtro a selezione singola.
 
-**Trasferimento (per usare Steam da mobile):** da PC menu ☰ → "Usa su un altro dispositivo" → codice di 8 caratteri (alfabeto senza ambigui, scade dopo 30 giorni, store Blobs `library-sync`); sul telefono, schermata iniziale → "Ho un codice". Per Steam la copertina non viene salvata (si ricostruisce dall'appId).
+**Trasferimento (per usare Steam da mobile):** da PC menu ☰ → "Usa su un altro dispositivo" → codice di 8 caratteri (alfabeto senza ambigui, scade dopo 30 giorni; i dati stanno in Netlify Blobs, store `library-sync`, oppure in `.data/library-sync/<codice>.json` fuori da Netlify; la cancellazione dei dati scaduti avviene solo alla lettura: manca una pulizia automatica); sul telefono, schermata iniziale → "Ho un codice". Per Steam la copertina non viene salvata (si ricostruisce dall'appId).
 
 **Rendering progressivo:** `STEP = 24` in App.jsx; `Sentinel` (rootMargin 900px) aumenta `limit`. `jumpTo` (dal menu ☰) usa `flushSync` per estendere `limit` fino al gioco scelto prima di fare scroll.
 
@@ -89,7 +95,16 @@ netlify/functions/
 - Info senza copertina; indice ☰ alfabetico (`Intl.Collator("it", {numeric: true})`) e coerente col filtro attivo.
 - Steam su mobile → trasferimento con codice; "Lista" → "Scarica Lista" (scarica i giochi visibili, quindi filtrati); filtri per genere.
 
+**Giro 4.** Sviluppo e uso senza Netlify (vedi §4b): funzioni eseguibili in locale e su un server Node, archivio del trasferimento su file, `fetchSteamDetails` nel formato standard, configurazione ESLint per il codice Node. Analisi privacy (GDPR) svolta ma NON ancora implementata: font da Google, dati negli URL, cancellazione dei codici scaduti, trasferimento cifrato, pagina privacy (in attesa di decisione dell'utente).
+
 **Giro 3.** Rimossi tutti i file non usati (backup `*BAK*`, `gogApi - Copy.js`, `GameCard`, `GamePreview`, `SteamImporter`, `App.css`, asset del template Vite, `fetchSteamGames*`, `gog.html`, `test-gog.mjs`, `gog-gallery2.0.zip`) e la dipendenza `cheerio`. Corretto un `no-useless-escape` in `public/steam-export.js`. Aggiunto questo file.
+
+## 4b. Hosting, crediti Netlify e portabilità
+
+- **Giro 4:** il progetto non dipende più da Netlify per essere sviluppato/provato. `npm run dev` monta le funzioni in locale; `npm start` serve sito + funzioni su qualunque macchina Node (Render, Railway, Fly.io, VPS: serve un volume persistente per `.data`, oppure un database, perché il disco di molti servizi si azzera a ogni riavvio). `fetchSteamDetails` è stata convertita nel formato standard; `sync` usa `lib/store.js`. Verificato in sandbox: serie di richieste HTTP su `npm start` e su Vite, e test Playwright end-to-end del trasferimento (codice generato dall'interfaccia in un contesto, usato in un altro, libreria che persiste).
+- **Crediti Netlify (piano gratuito, da documentazione Netlify: verifica i valori attuali):** 300 crediti/mese con limite fisso. Un deploy di produzione = 15 crediti (≈20 deploy al mese esauriscono tutto); banda 20 crediti/GB; richieste web 2 crediti/10.000 (incluse le chiamate alle funzioni); calcolo delle funzioni 10 crediti/GB-ora; deploy preview e branch deploy 0 crediti (secondo la documentazione ufficiale; una fonte terza dice altro).
+- **Regola pratica:** sviluppa e prova in locale; fai un solo deploy di produzione quando un lotto di modifiche è finito; per provare online usa deploy preview/branch deploy.
+- **Cloudflare Pages / Vercel / hosting condiviso:** non provati. Le funzioni sono ora in formato standard, quindi servono solo adattatori sottili; per `sync` serve uno storage adatto (KV/database).
 
 ## 5. Convenzioni di design (da rispettare)
 
@@ -127,7 +142,7 @@ Virtualizzazione vera per librerie molto grandi · Netlify Image CDN per ridimen
 
 1. Leggi prima i file coinvolti; non riscrivere ciò che funziona. Una sola implementazione per ogni cosa (es. screenshot solo in `services/screenshots.js`).
 2. Il formato di risposta delle function di screenshot è `{ screenshots: [{ thumb, full }] }`: non cambiarlo senza aggiornare `screenshots.js`.
-3. Dopo ogni modifica: `npm run lint` e `npm run build` devono passare. Per la UI, prova in viewport mobile.
+3. Dopo ogni modifica: `npm run lint` e `npm run build` devono passare. Prova in locale (`npm run dev`), con viewport mobile per la UI. Non fare deploy di produzione per ogni prova (costano crediti Netlify).
 4. Non reintrodurre `backdrop-blur` persistente, immagini `full` nelle griglie, o liste intere nel DOM.
 5. Dichiara onestamente cosa non hai potuto testare (API reali, Blobs).
 6. **Consegna:** zip con i file **alla radice** (niente cartella contenitore), senza `node_modules`, `dist` o file `*.zip`; senza file inutilizzati (niente `BAK`, copie, asset di template).

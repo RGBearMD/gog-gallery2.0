@@ -18,4 +18,9 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Codice che gira su Node (funzioni, server locale, configurazione)
+    files: ['server/**/*.js', 'lib/**/*.js', 'netlify/**/*.js', 'vite.config.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
 ])
