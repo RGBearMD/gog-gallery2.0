@@ -1,6 +1,6 @@
 // Trasferimento libreria tra dispositivi con un codice di 8 caratteri.
 // POST {platform, games} -> {code}   |   GET ?code=XXXXXXXX -> {platform, games}
-import { getStore } from "@netlify/blobs";
+import { getStore } from "../../lib/store.js";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // senza caratteri ambigui (0/O, 1/I/L)
 const TTL_MS = 30 * 24 * 3600 * 1000;
@@ -22,7 +22,7 @@ const clean = (g) => ({
 
 export default async (req) => {
   try {
-    const store = getStore("library-sync");
+    const store = await getStore("library-sync");
 
     if (req.method === "POST") {
       const text = await req.text();
