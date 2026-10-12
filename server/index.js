@@ -4,6 +4,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { handleFunction } from "./functions.js";
+import { getStore, purgeExpired } from "../lib/store.js";
 
 process.env.YGG_STORAGE ??= "file";
 
@@ -11,7 +12,7 @@ const DIST = path.resolve("dist");
 const PORT = Number(process.env.PORT) || 8888;
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml",
-  ".json": "application/json", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8",
+  ".json": "application/json", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json", ".txt": "text/plain; charset=utf-8",
 };
 
 if (!fs.existsSync(path.join(DIST, "index.html"))) {
@@ -29,6 +30,12 @@ http.createServer(async (req, res) => {
   if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(DIST, "index.html");
 
   res.setHeader("Content-Type", TYPES[path.extname(file)] || "application/octet-stream");
-  if (pathname.startsWith("/assets/")) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  // file con hash: cache lunga; tutto il resto (pagina, sw.js, manifest) sempre ricontrollato
+  res.setHeader("Cache-Control", pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache");
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, () => console.log(`Your Games Gallery in ascolto su http://localhost:${PORT}`));
+
+// Pulizia dei codici di trasferimento scaduti: all'avvio e ogni 6 ore
+const purge = () => getStore("library-sync").then((store) => purgeExpired(store)).catch((e) => console.error("pulizia:", e.message));
+purge();
+setInterval(purge, 6 * 3600 * 1000).unref();

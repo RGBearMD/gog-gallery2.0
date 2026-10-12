@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
 import GameGrid from "./components/GameGrid";
 import GameStrip from "./components/GameStrip";
@@ -6,6 +6,7 @@ import GameModal from "./components/GameModal";
 import GameIndex from "./components/GameIndex";
 import { scrollToGame } from "./services/scroll";
 import GenreBar from "./components/GenreBar";
+import Privacy from "./components/Privacy";
 import SyncModal from "./components/SyncModal";
 import Sentinel from "./components/Sentinel";
 import Dock from "./components/Dock";
@@ -14,6 +15,7 @@ import PublicProfileHelpModal from "./components/PublicProfileHelpModal";
 import { getAllGames } from "./services/gogApi";
 import { normalizeSteamGame } from "./services/screenshots";
 import { useGenres } from "./services/genres";
+import { useInstallPrompt } from "./services/install";
 
 const STORE_KEY = "ygg:library:v1";
 const STEP = 24; // giochi mostrati per volta (caricamento progressivo)
@@ -22,6 +24,8 @@ const mockGames = [{ id: "1", title: "Gioco di prova", cover: "", playtime: 120,
 
 const loadLibrary = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; } };
 const slim = (g) => { const c = { ...g }; delete c.rawGame; delete c.screenshots; return c; };
+const subscribeHash = (cb) => { window.addEventListener("hashchange", cb); return () => window.removeEventListener("hashchange", cb); };
+const getHash = () => window.location.hash;
 const dedupe = (list) => { const seen = new Set(); return list.filter((g) => !seen.has(g.id) && seen.add(g.id)); };
 
 export default function App() {
@@ -42,6 +46,8 @@ export default function App() {
   const fileInputRef = useRef(null);
   const hasGames = games.length > 0;
   const genreMap = useGenres(games);
+  const hash = useSyncExternalStore(subscribeHash, getHash);
+  const { canInstall, install } = useInstallPrompt();
 
   // Giochi visibili (dopo il filtro per genere) e conteggi per i chip
   const visible = useMemo(() => (genre ? games.filter((g) => genreMap[g.id]?.includes(genre)) : games), [games, genre, genreMap]);
@@ -124,6 +130,8 @@ export default function App() {
     }
   }
 
+  if (hash === "#privacy") return <Privacy />; // pagina «Privacy e trasparenza»
+
   const isGog = platform === "gog";
   const tab = (id, label, on) => (
     <button type="button" onClick={() => { setPlatform(id); setErrorMsg(null); }}
@@ -194,6 +202,8 @@ export default function App() {
               <button onClick={() => setShowHelp(true)} className="text-sm text-spark underline-offset-4 hover:underline">
                 {isGog ? "Come rendere pubblica la libreria GOG" : "Come creare steam_games.json"}
               </button>
+              {canInstall && <button onClick={install} className="rounded-lg bg-spark px-4 py-2 text-sm font-bold text-ink hover:brightness-110">Installa l'app</button>}
+              <a href="#privacy" className="text-xs text-muted underline-offset-4 hover:text-fog hover:underline">Privacy e trasparenza</a>
             </div>
 
             {import.meta.env.DEV && (
@@ -214,7 +224,7 @@ export default function App() {
       </main>
 
       {hasGames && <Dock mode={viewMode} onMode={setViewMode} onList={downloadList} onRandom={pickRandomGame} />}
-      <GameIndex games={visible} isOpen={indexOpen} onClose={() => setIndexOpen(false)} onPick={jumpTo} onSync={() => { setIndexOpen(false); setSyncMode("send"); }} />
+      <GameIndex games={visible} isOpen={indexOpen} onClose={() => setIndexOpen(false)} onPick={jumpTo} onSync={() => { setIndexOpen(false); setSyncMode("send"); }} onInstall={canInstall ? () => { setIndexOpen(false); install(); } : null} />
       <GameModal key={selectedGame?.id} game={selectedGame} onClose={() => setSelectedGame(null)} />
       <PublicProfileHelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} platform={platform} />
       {syncMode && <SyncModal mode={syncMode} platform={platform} games={games} onReceive={receive} onClose={() => setSyncMode(null)} />}
