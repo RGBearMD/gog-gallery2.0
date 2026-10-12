@@ -1,9 +1,8 @@
 // Trasferimento libreria tra dispositivi con un codice di 8 caratteri.
 // POST {platform, games} -> {code}   |   GET ?code=XXXXXXXX -> {platform, games}
-import { getStore } from "../../lib/store.js";
+import { getStore, purgeExpired, SYNC_TTL_MS } from "../../lib/store.js";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // senza caratteri ambigui (0/O, 1/I/L)
-const TTL_MS = 30 * 24 * 3600 * 1000;
 
 const json = (status, body) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -29,19 +28,20 @@ export default async (req) => {
       if (text.length > 2_000_000) return json(413, { error: "Libreria troppo grande." });
       const { platform, games } = JSON.parse(text);
       if (!Array.isArray(games) || !games.length || games.length > 5000) return json(400, { error: "Libreria non valida." });
+      await purgeExpired(store).catch(() => {}); // pulizia dei codici scaduti
       const code = newCode();
       await store.setJSON(code, {
         platform: platform === "steam" ? "steam" : "gog",
         games: games.map(clean).filter((g) => g.title && g.id !== ""),
         createdAt: Date.now(),
-      });
+      }, { metadata: { createdAt: Date.now() } });
       return json(200, { code });
     }
 
     const code = (new URL(req.url).searchParams.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (code.length !== 8) return json(400, { error: "Il codice deve avere 8 caratteri." });
     const data = await store.get(code, { type: "json" });
-    if (!data || Date.now() - data.createdAt > TTL_MS) {
+    if (!data || Date.now() - data.createdAt > SYNC_TTL_MS) {
       if (data) await store.delete(code);
       return json(404, { error: "Codice non trovato o scaduto." });
     }

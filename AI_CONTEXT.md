@@ -23,9 +23,12 @@ Test usato finora: Playwright (Chromium) con viewport mobile 390×844, giochi fi
 ## 2. Struttura (solo file in uso)
 
 ```
-index.html                       font Google (Chakra Petch + DM Sans), preconnect a steamstatic
+index.html                       manifest, icone, preconnect a steamstatic (NESSUN servizio esterno per i font)
 public/steam-export.js           script da incollare nella console di Steam (genera steam_games.json)
-public/favicon.svg
+public/favicon.svg · apple-touch-icon.png · icons/ (192, 512, maskable 512)
+public/manifest.webmanifest      app installabile (Android/Chrome)
+public/sw.js                     service worker: salva solo i file dell'app (offline); il build id si sostituisce in vite.config.js
+src/privacyConfig.js            DATI DEL TITOLARE da compilare prima di pubblicare (nome, email, hosting)
 src/main.jsx · src/index.css     index.css = Tailwind + token colore + keyframes (vedi §5)
 src/App.jsx                      stato globale, landing, header, filtri, rendering progressivo
 src/components/
@@ -40,6 +43,7 @@ src/components/
   Cover.jsx                      <img> con lazy/async e fallback copertina
   Sentinel.jsx                   IntersectionObserver per il caricamento progressivo
   Icons.jsx                      icone SVG inline
+  Privacy.jsx                    pagina «Privacy e trasparenza» (route `#privacy`, senza router) + pulsante «Cancella i dati salvati»
   PublicProfileHelpModal.jsx     guida GOG / guida Steam (script + codice)
 src/services/
   gogApi.js                      chiama la function `gog`, normalizza i giochi GOG
@@ -47,6 +51,7 @@ src/services/
   genres.js                      hook useGenres: scarica i generi in background con cache
   sync.js                        client del trasferimento con codice
   scroll.js                      scrollToGame (scroll + flash di evidenziazione)
+  install.js                     hook useInstallPrompt (evento beforeinstallprompt → pulsante «Installa l'app»)
 lib/store.js                     archivio chiave-valore per `sync`: Netlify Blobs su Netlify, file JSON in `.data/` altrove (YGG_STORAGE=file)
 server/functions.js              esegue netlify/functions/*.js fuori da Netlify (usato da Vite e da server/index.js)
 server/index.js                  server Node autonomo: serve dist/ + funzioni (utilizzabile su Render/Railway/Fly/VPS/locale)
@@ -56,6 +61,7 @@ netlify/functions/               TUTTE nella forma standard `export default asyn
   gameDetails.js                 GOG: ?id=<id numerico> → { screenshots: [{thumb, full}] }
   fetchSteamDetails.js           Steam: ?appId= → { screenshots: [{thumb, full}] }
   fetchGenres.js                 ?ids=steam-620,730,... (max 8) → { genres: { id: string[]|null }, rateLimited }
+  purgeSync.js                   funzione PIANIFICATA (@daily): elimina i codici scaduti (lib/store.js → purgeExpired)
   sync.js                        POST {platform, games} → {code}; GET ?code= → {platform, games} (archivio: lib/store.js)
 ```
 
@@ -75,7 +81,7 @@ netlify/functions/               TUTTE nella forma standard `export default asyn
 
 **Generi:** `useGenres` scarica 4 giochi ogni 5 s via `fetchGenres` (Steam: campo `genres` dell'API store; GOG: tag di `api.gog.com/v2/games/{id}`, best effort), backoff 90 s se Steam limita. I risultati restano per sempre in localStorage. In `App.jsx` `SKIP_GENRES` nasconde descrittori non-genere (Violent, Gore, Early Access, …). Filtro a selezione singola.
 
-**Trasferimento (per usare Steam da mobile):** da PC menu ☰ → "Usa su un altro dispositivo" → codice di 8 caratteri (alfabeto senza ambigui, scade dopo 30 giorni; i dati stanno in Netlify Blobs, store `library-sync`, oppure in `.data/library-sync/<codice>.json` fuori da Netlify; la cancellazione dei dati scaduti avviene solo alla lettura: manca una pulizia automatica); sul telefono, schermata iniziale → "Ho un codice". Per Steam la copertina non viene salvata (si ricostruisce dall'appId).
+**Trasferimento (per usare Steam da mobile):** da PC menu ☰ → "Usa su un altro dispositivo" → codice di 8 caratteri (alfabeto senza ambigui, scade dopo 30 giorni; i dati stanno in Netlify Blobs, store `library-sync`, oppure in `.data/library-sync/<codice>.json` fuori da Netlify; i dati scaduti vengono eliminati da `purgeExpired`: a ogni nuovo codice, dalla funzione pianificata `purgeSync` (Netlify, giornaliera) e dal server Node ogni 6 ore); sul telefono, schermata iniziale → "Ho un codice". Per Steam la copertina non viene salvata (si ricostruisce dall'appId).
 
 **Rendering progressivo:** `STEP = 24` in App.jsx; `Sentinel` (rootMargin 900px) aumenta `limit`. `jumpTo` (dal menu ☰) usa `flushSync` per estendere `limit` fino al gioco scelto prima di fare scroll.
 
@@ -95,9 +101,17 @@ netlify/functions/               TUTTE nella forma standard `export default asyn
 - Info senza copertina; indice ☰ alfabetico (`Intl.Collator("it", {numeric: true})`) e coerente col filtro attivo.
 - Steam su mobile → trasferimento con codice; "Lista" → "Scarica Lista" (scarica i giochi visibili, quindi filtrati); filtri per genere.
 
-**Giro 4.** Sviluppo e uso senza Netlify (vedi §4b): funzioni eseguibili in locale e su un server Node, archivio del trasferimento su file, `fetchSteamDetails` nel formato standard, configurazione ESLint per il codice Node. Analisi privacy (GDPR) svolta ma NON ancora implementata: font da Google, dati negli URL, cancellazione dei codici scaduti, trasferimento cifrato, pagina privacy (in attesa di decisione dell'utente).
+**Giro 4.** Sviluppo e uso senza Netlify (vedi §4b): funzioni eseguibili in locale e su un server Node, archivio del trasferimento su file, `fetchSteamDetails` nel formato standard, configurazione ESLint per il codice Node. Analisi privacy (GDPR) svolta; implementato nel giro 5 solo una parte (vedi sotto). ANCORA DA DECIDERE: dati negli URL (username GOG, ID, codice) → POST, trasferimento cifrato con chiave nel `#`, scadenza più breve/cancellazione al primo uso, pulsante «Elimina ora», analisi dei generi opt-in.
+
+**Giro 5.** Font in locale (fontsource); pagina «Privacy e trasparenza» (`#privacy`) con collegamenti da landing, menu ☰ e finestra del codice, e pulsante per cancellare i dati locali; pulizia automatica dei codici scaduti (`purgeExpired`, `purgeSync`, timer del server); app installabile su Android (manifest, icone, service worker, pulsante «Installa l'app»).
 
 **Giro 3.** Rimossi tutti i file non usati (backup `*BAK*`, `gogApi - Copy.js`, `GameCard`, `GamePreview`, `SteamImporter`, `App.css`, asset del template Vite, `fetchSteamGames*`, `gog.html`, `test-gog.mjs`, `gog-gallery2.0.zip`) e la dipendenza `cheerio`. Corretto un `no-useless-escape` in `public/steam-export.js`. Aggiunto questo file.
+
+## 4a. App installabile (PWA) e privacy
+
+- **PWA:** `manifest.webmanifest` + icone generate dal logo + `sw.js`. Il service worker mette in cache SOLO la pagina e `/assets/*` (hash nel nome); non intercetta `/.netlify/*` né immagini di Steam/GOG. Pagina network-first (aggiornamenti subito, copia offline se manca la rete). Verificato in Chromium: `Page.getInstallabilityErrors` = nessun errore, SW attivo, riapertura offline con libreria salvata, pulsante «Installa l'app» (evento simulato).
+- **Font in locale:** pacchetti `@fontsource/chakra-petch` e `@fontsource/dm-sans` (OFL-1.1), solo subset latin, importati in `src/main.jsx`. Nessuna richiesta a Google (verificato).
+- **Pagina privacy:** `src/components/Privacy.jsx`, testo che descrive lo stato REALE dell'app (GOG username e ID nei log dell'hosting; analisi generi che invia tutti gli ID; codice di trasferimento; terzi = CDN Steam/GOG). Se cambi il comportamento dei dati, AGGIORNA la pagina. I dati del titolare sono in `src/privacyConfig.js`: se vuoti, la pagina mostra un avviso.
 
 ## 4b. Hosting, crediti Netlify e portabilità
 
@@ -119,7 +133,8 @@ netlify/functions/               TUTTE nella forma standard `export default asyn
 
 **Verificato:** build, `npm run lint` pulito, smoke test Playwright mobile (progressivo, accordion, Modal senza copertina, indice alfabetico, salto a un gioco lontano, filtri, etichette del Dock, nessun errore JS), sintassi delle function (`node --check`).
 
-**NON verificato in produzione** (nessun accesso di rete a Steam/GOG/Blobs dal sandbox):
+**NON verificato in produzione** (nessun accesso di rete a Steam/GOG/Blobs dal sandbox; installazione su un telefono Android vero; revisione legale del testo privacy):
+0. `purgeSync` pianificata su Netlify e le chiamate `list()`/`getMetadata()` di Netlify Blobs (la pulizia è provata solo sul file store).
 1. Risposta reale di `appdetails` con `filters=screenshots` / `filters=genres` (Steam).
 2. Formato dei tag in `api.gog.com/v2/games/{id}`: se i chip GOG non compaiono, è il primo sospetto.
 3. Formatter GOG scelti per le dimensioni: `ggvgm` (miniatura) e `ggvgl` (ingrandimento) → da controllare a vista.

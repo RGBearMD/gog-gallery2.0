@@ -3,7 +3,7 @@ import { Icon } from "./Icons";
 
 const collator = new Intl.Collator("it", { sensitivity: "base", numeric: true });
 
-export default function GameIndex({ games, isOpen, onClose, onPick, onSync }) {
+export default function GameIndex({ games, isOpen, onClose, onPick, onSync, onInstall }) {
   const [q, setQ] = useState("");
   const sorted = useMemo(() => [...games].sort((a, b) => collator.compare(a.title, b.title)), [games]); // ordine alfabetico
   if (!isOpen) return null;
@@ -28,10 +28,12 @@ export default function GameIndex({ games, isOpen, onClose, onPick, onSync }) {
           ))}
           {list.length === 0 && <p className="px-3 py-4 text-sm text-muted">Nessun gioco trovato.</p>}
         </div>
-        <div className="border-t border-line/60 p-3">
+        <div className="space-y-2 border-t border-line/60 p-3">
+          {onInstall && <button onClick={onInstall} className="w-full rounded-lg bg-spark py-2.5 text-xs font-bold text-ink hover:brightness-110">Installa l'app</button>}
           <button onClick={onSync} className="flex w-full items-center justify-center gap-2 rounded-lg bg-raised py-2.5 text-xs font-semibold hover:bg-line">
             <Icon name="swap" className="size-4" /> Usa su un altro dispositivo
           </button>
+          <a href="#privacy" onClick={onClose} className="block text-center text-xs text-muted hover:text-fog">Privacy e trasparenza</a>
         </div>
       </aside>
     </div>

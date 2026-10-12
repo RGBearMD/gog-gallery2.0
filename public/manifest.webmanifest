@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Your Games Gallery",
+  "short_name": "Games Gallery",
+  "description": "Sfoglia le tue librerie GOG e Steam con copertine, screenshot e filtri per genere.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#13111d",
+  "theme_color": "#13111d",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

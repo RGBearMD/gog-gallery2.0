@@ -65,6 +65,7 @@ export default function SyncModal({ mode, platform, games, onReceive, onClose })
             </button>
           </>
         )}
+        <a href="#privacy" onClick={onClose} className="mt-3 block text-center text-xs text-muted underline-offset-4 hover:text-fog hover:underline">Cosa viene salvato?</a>
         {err && <p role="alert" className="mt-3 rounded-lg border border-red-500/40 bg-red-950/60 p-2.5 text-xs text-red-200">{err}</p>}
       </div>
     </div>
