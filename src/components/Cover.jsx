@@ -1,4 +1,4 @@
-import { coverUrl } from "../services/screenshots";
+import { coverUrl } from "../services/gameData";
 
 // wide = usa l'immagine orizzontale originale (banner), altrimenti la copertina verticale.
 export default function Cover({ game, wide = false, className = "" }) {

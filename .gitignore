@@ -33,6 +33,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Dati locali (archivio del trasferimento con codice)
-.data

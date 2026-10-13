@@ -4,9 +4,6 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { handleFunction } from "./functions.js";
-import { getStore, purgeExpired } from "../lib/store.js";
-
-process.env.YGG_STORAGE ??= "file";
 
 const DIST = path.resolve("dist");
 const PORT = Number(process.env.PORT) || 8888;
@@ -34,8 +31,3 @@ http.createServer(async (req, res) => {
   res.setHeader("Cache-Control", pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache");
   fs.createReadStream(file).pipe(res);
 }).listen(PORT, () => console.log(`Your Games Gallery in ascolto su http://localhost:${PORT}`));
-
-// Pulizia dei codici di trasferimento scaduti: all'avvio e ogni 6 ore
-const purge = () => getStore("library-sync").then((store) => purgeExpired(store)).catch((e) => console.error("pulizia:", e.message));
-purge();
-setInterval(purge, 6 * 3600 * 1000).unref();

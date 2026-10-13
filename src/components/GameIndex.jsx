@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { Icon } from "./Icons";
+import KofiButton from "./KofiButton";
 
 const collator = new Intl.Collator("it", { sensitivity: "base", numeric: true });
 
-export default function GameIndex({ games, isOpen, onClose, onPick, onSync, onInstall }) {
+export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, onInstall }) {
   const [q, setQ] = useState("");
   const sorted = useMemo(() => [...games].sort((a, b) => collator.compare(a.title, b.title)), [games]); // ordine alfabetico
   if (!isOpen) return null;
@@ -30,9 +31,11 @@ export default function GameIndex({ games, isOpen, onClose, onPick, onSync, onIn
         </div>
         <div className="space-y-2 border-t border-line/60 p-3">
           {onInstall && <button onClick={onInstall} className="w-full rounded-lg bg-spark py-2.5 text-xs font-bold text-ink hover:brightness-110">Installa l'app</button>}
-          <button onClick={onSync} className="flex w-full items-center justify-center gap-2 rounded-lg bg-raised py-2.5 text-xs font-semibold hover:bg-line">
-            <Icon name="swap" className="size-4" /> Usa su un altro dispositivo
+          <button onClick={onDownload} className="flex w-full items-center justify-center gap-2 rounded-lg bg-raised py-2.5 text-xs font-semibold hover:bg-line">
+            <Icon name="download" className="size-4" /> Scarica lista
           </button>
+          <KofiButton compact />
+          <p className="px-1 text-center text-[11px] leading-snug text-muted">Se le donazioni supereranno 1 €, metà dell'importo sarà devoluta a un'associazione.</p>
           <a href="#privacy" onClick={onClose} className="block text-center text-xs text-muted hover:text-fog">Privacy e trasparenza</a>
         </div>
       </aside>

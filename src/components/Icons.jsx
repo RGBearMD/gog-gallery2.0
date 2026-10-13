@@ -9,6 +9,8 @@ const PATHS = {
   prev: "M15 5l-7 7 7 7",
   next: "M9 5l7 7-7 7",
   upload: "M12 16V4m0 0L8 8m4-4l4 4M5 20h14",
+  timeline: "M3 20h18M6 20v-8m6 8V5m6 15v-5",
+  filter: "M4 5h16l-6 8v5l-4 2v-7z",
   copy: "M9 9h10v10H9zM5 15V5h10",
 };
 

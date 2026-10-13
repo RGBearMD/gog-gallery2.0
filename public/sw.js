@@ -3,7 +3,7 @@
 const CACHE = "ygg-__BUILD_ID__"; // il numero cambia a ogni build (vedi vite.config.js)
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest", "/favicon.svg"])).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.webmanifest", "/favicon-48.png"])).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
