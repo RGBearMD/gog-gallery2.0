@@ -39,7 +39,7 @@ export default function SyncModal({ mode, platform, games, onReceive, onClose })
               <button onClick={copy} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-raised py-2.5 text-sm font-semibold hover:bg-line">
                 <Icon name="copy" className="size-4" /> {copied ? "Copiato!" : "Copia il codice"}
               </button>
-              <p className="mt-3 text-xs text-muted">Il codice vale 30 giorni. Chi lo conosce può vedere i titoli della tua libreria, non il tuo account.</p>
+              <p className="mt-3 text-xs text-muted">Il codice vale 30 giorni, ma la libreria che importi resta salvata sul dispositivo anche dopo. Chi lo conosce può vedere i titoli della tua libreria, non il tuo account.</p>
             </>
           ) : (
             <>

@@ -4,6 +4,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+// Variabili d'ambiente dal file .env (se esiste): STEAM_API_KEY, DATA_DIR, …
+try { process.loadEnvFile(".env"); } catch { /* nessun .env */ }
+
 const PREFIX = "/.netlify/functions/";
 const MAX_BODY = 3_000_000;
 const FORWARD = ["content-type", "accept", "user-agent"];

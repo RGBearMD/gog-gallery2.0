@@ -1,69 +1,50 @@
-import { useState } from "react";
+import { useRef } from "react";
 import Cover from "./Cover";
-import Lightbox from "./Lightbox";
-import { useGameShots } from "../services/screenshots";
+import Thumb, { ThumbSkeleton } from "./Thumb";
+import { useGameDetails, prefetchDetails } from "../services/gameData";
+import { useNearViewport } from "../services/viewport";
 
-function Row({ game, open, onToggle, onSelect, onZoom }) {
-  // "mounted" tiene gli screenshot nel DOM solo durante la chiusura animata.
-  const [mounted, setMounted] = useState(false);
-  const show = open || mounted;
-  const { shots, loading } = useGameShots(game, show); // richiesta solo quando serve
-  const toggle = () => { setMounted(true); onToggle(game.id); };
+// Scheda: copertina a sinistra; accanto, in alto titolo + anno e sotto 2 screenshot. Tutta la scheda apre «Info».
+function Row({ game, year, onSelect }) {
+  const ref = useRef(null);
+  const near = useNearViewport(ref); // gli screenshot si chiedono solo per le righe che si stanno per vedere
+  const { shots, year: detailYear, loading } = useGameDetails(game, near);
+  const shownYear = year ?? detailYear;
+  const open = () => onSelect(game);
 
   return (
-    <article id={`game-${game.id}`} className="scroll-mb-28 scroll-mt-16 rounded-2xl border border-line/60 bg-panel p-3">
-      <div className="flex items-center gap-3">
-        <button onClick={() => onSelect(game)} className="min-w-0 flex-1 truncate text-left font-display text-base font-semibold hover:text-spark">{game.title}</button>
-        <button onClick={() => onSelect(game)} className="shrink-0 rounded-lg bg-raised px-3 py-1 text-xs font-semibold hover:bg-line">Info</button>
-      </div>
-
-      <button onClick={toggle} aria-expanded={open} aria-label={`Screenshot di ${game.title}`} className="relative mt-2 block h-36 w-full overflow-hidden rounded-xl bg-ink">
-        <Cover game={game} wide />
-        <span className="absolute bottom-2 right-2 rounded-full bg-black/75 px-3 py-1 text-xs font-semibold">{open ? "Chiudi" : "Screenshot"}</span>
-      </button>
-
-      {/* Apertura/chiusura animata: solo grid-rows + opacity, leggere anche su mobile */}
-      <div
-        onTransitionEnd={(e) => { if (e.target === e.currentTarget && !open) setMounted(false); }}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-      >
-        <div className="min-h-0 overflow-hidden">
-          {show && (
-            <div className="pt-2">
-              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                {loading && Array.from({ length: 4 }, (_, i) => <div key={i} className="aspect-video animate-pulse rounded-lg bg-raised" />)}
-                {!loading && shots.slice(0, 4).map((s, i) => (
-                  <button key={i} onClick={() => onZoom(shots, i)} style={{ animationDelay: `${i * 70}ms` }} className="aspect-video animate-scale-up overflow-hidden rounded-lg bg-ink">
-                    <img src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-              {!loading && shots.length === 0 && <p className="py-2 text-sm text-muted">Nessuno screenshot disponibile per questo gioco.</p>}
-            </div>
-          )}
+    <article
+      ref={ref}
+      id={`game-${game.id}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Apri le informazioni di ${game.title}`}
+      onClick={open}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+      onPointerDown={() => prefetchDetails(game)}
+      className="flex scroll-mb-28 scroll-mt-16 cursor-pointer gap-3 rounded-2xl border border-line/60 bg-panel p-3 transition-colors hover:border-spark/60"
+    >
+      <div className="aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-lg bg-ink"><Cover game={game} /></div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <h3 className="line-clamp-2 font-display text-base font-semibold leading-tight">
+          {game.title}{" "}
+          {shownYear && <span className="ml-1 whitespace-nowrap text-xs font-semibold text-spark">{shownYear}</span>}
+        </h3>
+        <div className="grid grid-cols-2 gap-1.5">
+          {!near || loading
+            ? [0, 1].map((i) => <ThumbSkeleton key={i} />)
+            : shots.slice(0, 2).map((s, i) => <Thumb key={s.thumb} src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} />)}
+          {near && !loading && shots.length === 0 && <p className="col-span-2 text-xs text-muted">Nessuno screenshot disponibile.</p>}
         </div>
       </div>
     </article>
   );
 }
 
-export default function GameStrip({ games, onSelect }) {
-  const [openId, setOpenId] = useState(null); // una sola riga aperta alla volta
-  const [lb, setLb] = useState(null);
-
-  function toggle(id) {
-    const opening = openId !== id;
-    setOpenId(opening ? id : null);
-    // Dopo l'animazione porto la riga in vista (la chiusura di quella sopra sposta il contenuto).
-    if (opening) setTimeout(() => document.getElementById(`game-${id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 340);
-  }
-
+export default function GameStrip({ games, onSelect, meta = {} }) {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-3">
-      {games.map((g) => (
-        <Row key={g.id} game={g} open={openId === g.id} onToggle={toggle} onSelect={onSelect} onZoom={(shots, index) => setLb({ shots, index })} />
-      ))}
-      {lb && <Lightbox shots={lb.shots} index={lb.index} onIndex={(index) => setLb({ ...lb, index })} onClose={() => setLb(null)} />}
+      {games.map((g) => <Row key={g.id} game={g} year={meta[g.id]?.y} onSelect={onSelect} />)}
     </div>
   );
 }

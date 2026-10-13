@@ -1,4 +1,4 @@
-// GOG: restituisce screenshot come { thumb, full }.
+// GOG: restituisce screenshot (max 5) come { thumb, full } e l'anno di uscita.
 // thumb = formato medio (griglie), full = formato grande (solo ingrandimento).
 const THUMB = ["ggvgm", "ggvgt", "ggvgl"];
 const FULL = ["ggvgl", "ggvgm_2x", "ggvgm"];
@@ -24,9 +24,11 @@ export default async (req) => {
         const screenshots = (data.screenshots || [])
             .map((s) => ({ thumb: pick(s, THUMB), full: pick(s, FULL) }))
             .filter((s) => s.thumb)
-            .map((s) => ({ thumb: s.thumb, full: s.full || s.thumb }));
+            .map((s) => ({ thumb: s.thumb, full: s.full || s.thumb }))
+            .slice(0, 5);
+        const year = Number((String(data.release_date || "").match(/\b(19[7-9]\d|20\d\d)\b/) || [])[1]) || null;
 
-        return json(200, { screenshots }, "public, max-age=86400, s-maxage=86400");
+        return json(200, { screenshots, year, local: null, online: null }, "public, max-age=86400, s-maxage=86400");
     } catch (e) {
         return json(500, { error: e.message });
     }

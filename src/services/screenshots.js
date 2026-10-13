@@ -9,7 +9,7 @@ export const coverUrl = (g) =>
     ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${steamAppId(g)}/library_600x900.jpg`
     : g.cover;
 
-export const hoursPlayed = (g) => Math.round(((g.playtime || 0) / 60) * 10) / 10;
+export const hoursPlayed = (g) => (Math.round(((g.playtime || 0) / 60) * 10) / 10).toLocaleString("it-IT");
 
 // Normalizza i giochi letti da steam_games.json
 export function normalizeSteamGame(g) {
@@ -61,6 +61,9 @@ export async function fetchScreenshots(game) {
   inflight.set(key, p);
   return p;
 }
+
+// Avvia il caricamento in anticipo (es. al tocco), così quando si apre il Modal i dati sono già pronti.
+export const prefetchScreenshots = (game) => { fetchScreenshots(game).catch(() => {}); };
 
 export function useGameShots(game, enabled = true) {
   const id = game ? String(game.id) : null;
