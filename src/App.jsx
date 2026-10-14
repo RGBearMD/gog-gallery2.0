@@ -19,6 +19,7 @@ import { fetchSteamProfile } from "./services/steamProfile";
 import { scrollToGame } from "./services/scroll";
 import { useMeta } from "./services/meta";
 import { useInstallPrompt } from "./services/install";
+import { PRIVACY } from "./privacyConfig";
 
 const ACC_KEY = "ygg:accounts:v1"; // { last, gog: {id, games, savedAt, source}, steam: {...} }
 const OLD_KEY = "ygg:library:v1";  // formato precedente (una sola libreria): viene migrato
@@ -189,7 +190,7 @@ export default function App() {
             <img src="/logo.webp" alt="YGG, Your Games Gallery" width="280" height="240" fetchPriority="high" decoding="async"
               className="animate-float mx-auto h-auto w-56 drop-shadow-[0_14px_28px_rgba(167,139,250,0.28)]" />
             <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight md:text-4xl">La tua libreria di giochi, come un museo digitale.</h2>
-            <p className="mb-6 mt-3 text-sm text-muted">Trasforma la tua libreria GOG o Steam in una gallery elegante e portatile: copertine, screenshot e una timeline di tutta la collezione.</p>
+            <p className="mb-6 mt-3 text-sm text-muted">Le librerie mostrano solo le copertine. YGG ti fa vedere anche gli screenshot di ogni gioco, per farti un'idea di com'è con un colpo d'occhio.</p>
 
             {saved.length > 0 && (
               <div className="mb-6 text-left">
@@ -267,6 +268,7 @@ export default function App() {
               <KofiButton />
               <p className="max-w-xs text-xs leading-snug text-muted">Se le donazioni supereranno 1 €, metà dell'importo sarà devoluta a un'associazione.</p>
               <a href="#privacy" className="mt-3 text-xs text-muted underline-offset-4 hover:text-fog hover:underline">Privacy e trasparenza</a>
+              {PRIVACY.controllerName && <p className="text-[11px] text-muted">YGG · creato da {PRIVACY.controllerName}</p>}
             </div>
           </section>
         ) : (
