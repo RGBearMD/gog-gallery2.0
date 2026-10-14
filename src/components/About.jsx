@@ -1,7 +1,7 @@
 // «Cos'è YGG»: breve presentazione con 3 immagini d'esempio (giochi fittizi, in public/screens/: sostituibili con le tue).
 const SHOTS = [
-  ["/screens/strip.webp", "La lista: copertina, titolo, anno e screenshot"],
-  ["/screens/info.webp", "La scheda del gioco: anno, multiplayer, link allo store"],
+  ["/screens/strip.webp", "La lista: copertina, titolo, anno e già 3 screenshot"],
+  ["/screens/info.webp", "La scheda del gioco: 6 screenshot da ingrandire"],
   ["/screens/timeline.webp", "La timeline: i giochi anno per anno"],
 ];
 
@@ -10,10 +10,10 @@ export default function About() {
     <section className="mt-14 text-left" aria-labelledby="about-title">
       <h3 id="about-title" className="text-xl font-bold tracking-tight">Cos'è YGG</h3>
       <p className="mt-2 text-sm leading-relaxed text-fog/90">
-        YGG, Your Games Gallery, trasforma la tua libreria GOG o Steam in una gallery elegante e portatile: guardi i giochi che possiedi come le opere di un museo digitale.
+        Le librerie di giochi mostrano quasi sempre solo le copertine, ed è limitante. YGG, Your Games Gallery, ti dà una panoramica immediata della tua collezione GOG o Steam mostrando anche gli screenshot, così con un colpo d'occhio ti fai un'idea di com'è ogni gioco: come in un museo digitale.
       </p>
       <ul className="mt-3 space-y-1.5 text-sm text-muted">
-        <li>• Ogni gioco ha la sua scheda: copertina, screenshot, anno di uscita e multiplayer.</li>
+        <li>• Ogni gioco mostra subito 2 o 3 screenshot accanto alla copertina; toccalo per vederne fino a 6 e ingrandirli.</li>
         <li>• Sfoglia come vuoi: lista, cards, filtri per genere e una timeline anno per anno.</li>
         <li>• Installala come app: nessun account, la libreria resta sul tuo dispositivo e si riapre anche senza rete (le immagini richiedono la connessione).</li>
       </ul>

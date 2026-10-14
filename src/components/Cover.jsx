@@ -1,13 +1,14 @@
 import { coverUrl } from "../services/gameData";
 
 // wide = usa l'immagine orizzontale originale (banner), altrimenti la copertina verticale.
-export default function Cover({ game, wide = false, className = "" }) {
+export default function Cover({ game, wide = false, lowPriority = false, className = "" }) {
   return (
     <img
       src={wide ? game.cover : coverUrl(game)}
       alt={game.title}
       loading="lazy"
       decoding="async"
+      fetchPriority={lowPriority ? "low" : "auto"}
       onError={(e) => {
         const t = e.currentTarget;
         if (!t.dataset.fb && game.cover) { t.dataset.fb = "1"; t.src = game.cover; }

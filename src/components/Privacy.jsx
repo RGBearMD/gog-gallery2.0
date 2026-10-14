@@ -21,7 +21,7 @@ function clearLocalData() {
 
 export default function Privacy() {
   const { controllerName, contactEmail, hosting, lastUpdate } = PRIVACY;
-  const incomplete = !controllerName || !contactEmail;
+  const missing = [!controllerName && "il nome", !contactEmail && "l'email di contatto"].filter(Boolean).join(" e ");
   useEffect(() => window.scrollTo(0, 0), []);
   const mail = contactEmail && <a className="text-spark underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>;
 
@@ -33,9 +33,9 @@ export default function Privacy() {
       </header>
 
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-3 pb-16 pt-5">
-        {incomplete && (
+        {missing && (
           <p role="alert" className="rounded-xl border border-spark/50 bg-spark/10 p-3 text-sm text-spark">
-            Dati del titolare non ancora compilati: apri <code>src/privacyConfig.js</code> prima di pubblicare.
+            Dati del titolare incompleti: manca {missing}. Apri <code>src/privacyConfig.js</code> prima di pubblicare.
           </p>
         )}
 
@@ -54,13 +54,13 @@ export default function Privacy() {
 
         <Section title="Cosa succede ai tuoi dati">
           <h3 className="font-semibold text-fog">Sul tuo dispositivo</h3>
-          <p>Il browser conserva le librerie importate (con l'username GOG o il profilo Steam usati, per riaprirle e aggiornarle), i dettagli già scaricati (screenshot, anno, generi, multiplayer) e i file dell'app, per aprirla anche senza rete. Servono a far funzionare il servizio che richiedi e non vengono inviati a nessuno. Puoi cancellarli in ogni momento con il pulsante in fondo.</p>
+          <p>Il browser conserva le librerie importate (con l'username GOG o il profilo Steam usati, per riaprirle e aggiornarle), i dettagli già scaricati (screenshot, anno, generi) e i file dell'app, per aprirla anche senza rete. Servono a far funzionare il servizio che richiedi e non vengono inviati a nessuno. Puoi cancellarli in ogni momento con il pulsante in fondo.</p>
           <h3 className="pt-1 font-semibold text-fog">Importazione da GOG</h3>
           <p>L'username che inserisci viene inviato alla nostra funzione, che lo inoltra a gog.com per leggere la tua libreria (deve essere pubblica). Non lo salviamo sui nostri server. Compare però nell'indirizzo della richiesta, quindi può restare nei registri tecnici dell'hosting.</p>
           <h3 className="pt-1 font-semibold text-fog">Importazione da Steam</h3>
           <p>Il link del profilo, il nome profilo o lo SteamID che scrivi viene inviato (nel corpo della richiesta, non nell'indirizzo) alla nostra funzione, che lo inoltra a Steam per leggere i tuoi giochi: funziona solo se i «Dettagli dei giochi» sono pubblici. Non lo salviamo sui nostri server. Dopo l'importazione puoi rimettere il profilo privato.</p>
-          <h3 className="pt-1 font-semibold text-fog">Anno, generi, screenshot e multiplayer</h3>
-          <p>Per queste informazioni inviamo ai nostri server gli ID dei giochi, che li chiedono a Steam, GOG e PCGamingWiki. L'analisi di anno e generi parte in automatico dopo l'importazione e invia, a gruppi (fino a 50 giochi per volta), gli ID di tutti i giochi della libreria. Gli ID compaiono nell'indirizzo delle richieste e quindi nei registri tecnici dell'hosting. I risultati restano sul tuo dispositivo.</p>
+          <h3 className="pt-1 font-semibold text-fog">Anno, generi e screenshot</h3>
+          <p>Per queste informazioni inviamo ai nostri server gli ID dei giochi, che li chiedono a Steam e GOG. L'analisi di anno e generi parte in automatico dopo l'importazione e invia, a gruppi (fino a 50 giochi per volta), gli ID di tutti i giochi della libreria. Gli ID compaiono nell'indirizzo delle richieste e quindi nei registri tecnici dell'hosting. I risultati restano sul tuo dispositivo.</p>
           <h3 className="pt-1 font-semibold text-fog">Registri tecnici dell'hosting</h3>
           <p>{hosting} registra dati tecnici di ogni richiesta (indirizzo IP, data e ora, indirizzo richiesto, browser) per garantire sicurezza e funzionamento. Li gestisce con i propri tempi di conservazione.</p>
           <h3 className="pt-1 font-semibold text-fog">Servizi di terzi</h3>
@@ -80,7 +80,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="Destinatari e trasferimenti">
-          <p>{hosting} ospita il sito e le funzioni per nostro conto. Steam, GOG e PCGamingWiki ricevono le richieste necessarie a fornire immagini e dati. Il fornitore può trattare dati anche fuori dallo Spazio Economico Europeo: in tal caso si applicano le garanzie previste dal GDPR (artt. 44 e seguenti).</p>
+          <p>{hosting} ospita il sito e le funzioni per nostro conto. Steam e GOG ricevono le richieste necessarie a fornire immagini e dati. Il fornitore può trattare dati anche fuori dallo Spazio Economico Europeo: in tal caso si applicano le garanzie previste dal GDPR (artt. 44 e seguenti).</p>
         </Section>
 
         <Section title="I tuoi diritti">
@@ -92,7 +92,7 @@ export default function Privacy() {
         </Section>
 
         <Section title="Fonti dei dati e marchi">
-          <p>Informazioni sui giochi: Steam, GOG e PCGamingWiki (multiplayer locale e online). Steam è un marchio di Valve Corporation e GOG un marchio di GOG sp. z o.o. Questo sito non è affiliato né approvato da loro.</p>
+          <p>Informazioni sui giochi: Steam e GOG. Steam è un marchio di Valve Corporation e GOG un marchio di GOG sp. z o.o. Questo sito non è affiliato né approvato da loro.</p>
         </Section>
 
         <button onClick={clearLocalData} className="rounded-xl border border-red-500/40 bg-red-950/40 py-3 text-sm font-bold text-red-200 hover:bg-red-950/70">

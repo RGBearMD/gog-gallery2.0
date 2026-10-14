@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Your Games Gallery",
   "short_name": "YGG",
-  "description": "Sfoglia le tue librerie GOG e Steam con copertine, screenshot e filtri per genere.",
+  "description": "Le tue librerie GOG e Steam con gli screenshot di ogni gioco, per una panoramica immediata.",
   "lang": "it",
   "start_url": "/",
   "scope": "/",

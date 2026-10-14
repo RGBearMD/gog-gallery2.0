@@ -1,16 +1,37 @@
 import { useRef } from "react";
 import Cover from "./Cover";
 import Thumb, { ThumbSkeleton } from "./Thumb";
-import { useGameDetails, prefetchDetails } from "../services/gameData";
+import { useGameDetails, prefetchDetails, isSteam } from "../services/gameData";
 import { useNearViewport } from "../services/viewport";
 
-// Scheda: copertina a sinistra; accanto, in alto titolo + anno e sotto 2 screenshot. Tutta la scheda apre «Info».
+// Scheda della lista. Tutta la scheda apre «Info».
+//  - GOG (copertina orizzontale): in alto copertina + «Titolo - anno», sotto 3 screenshot a tutta larghezza.
+//  - Steam (copertina verticale): copertina piccola a sinistra; accanto «Titolo - anno» e sotto 2 screenshot.
 function Row({ game, year, onSelect }) {
   const ref = useRef(null);
-  const near = useNearViewport(ref); // gli screenshot si chiedono solo per le righe che si stanno per vedere
-  const { shots, year: detailYear, loading } = useGameDetails(game, near);
+  const near = useNearViewport(ref, "900px"); // i dati si chiedono poco prima che la riga arrivi sullo schermo
+  const { shots, year: detailYear, loading, failed } = useGameDetails(game, near);
+  const steam = isSteam(game);
+  const count = steam ? 2 : 3;
   const shownYear = year ?? detailYear;
   const open = () => onSelect(game);
+
+  const title = (
+    <h3 className="line-clamp-2 min-w-0 flex-1 font-display text-base font-semibold leading-tight">
+      {game.title}{shownYear && <span className="whitespace-nowrap text-spark"> - {shownYear}</span>}
+    </h3>
+  );
+  const colspan = steam ? "col-span-2" : "col-span-3";
+  const pictures = (
+    <div className={`grid gap-1.5 ${steam ? "grid-cols-2" : "grid-cols-3"}`}>
+      {!near || loading
+        ? Array.from({ length: count }, (_, i) => <ThumbSkeleton key={i} />)
+        : shots.slice(0, count).map((s, i) => <Thumb key={s.thumb} src={s.tiny || s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} eager />)}
+      {near && !loading && shots.length === 0 && (
+        <p className={`${colspan} text-xs text-muted`}>{failed ? "Screenshot non disponibili in questo momento." : "Nessuno screenshot disponibile."}</p>
+      )}
+    </div>
+  );
 
   return (
     <article
@@ -22,21 +43,22 @@ function Row({ game, year, onSelect }) {
       onClick={open}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
       onPointerDown={() => prefetchDetails(game)}
-      className="flex scroll-mb-28 scroll-mt-16 cursor-pointer gap-3 rounded-2xl border border-line/60 bg-panel p-3 transition-colors hover:border-spark/60"
+      className={`scroll-mb-28 scroll-mt-16 cursor-pointer rounded-2xl border border-line/60 bg-panel p-3 transition-colors hover:border-spark/60 ${steam ? "flex gap-3" : "flex flex-col gap-2.5"}`}
     >
-      <div className="aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-lg bg-ink"><Cover game={game} /></div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <h3 className="line-clamp-2 font-display text-base font-semibold leading-tight">
-          {game.title}{" "}
-          {shownYear && <span className="ml-1 whitespace-nowrap text-xs font-semibold text-spark">{shownYear}</span>}
-        </h3>
-        <div className="grid grid-cols-2 gap-1.5">
-          {!near || loading
-            ? [0, 1].map((i) => <ThumbSkeleton key={i} />)
-            : shots.slice(0, 2).map((s, i) => <Thumb key={s.thumb} src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} />)}
-          {near && !loading && shots.length === 0 && <p className="col-span-2 text-xs text-muted">Nessuno screenshot disponibile.</p>}
-        </div>
-      </div>
+      {steam ? (
+        <>
+          <div className="aspect-[2/3] w-14 shrink-0 self-start overflow-hidden rounded-md bg-ink"><Cover game={game} lowPriority /></div>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">{title}{pictures}</div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-3">
+            <div className="aspect-[460/215] w-28 shrink-0 overflow-hidden rounded-md bg-ink"><Cover game={game} wide lowPriority /></div>
+            {title}
+          </div>
+          {pictures}
+        </>
+      )}
     </article>
   );
 }
