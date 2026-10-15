@@ -18,7 +18,7 @@ export default function GameModal({ game, metaYear, onClose }) {
   if (!game) return null;
   const steam = isSteam(game);
   const url = storeUrl(game);
-  const shownYear = year ?? metaYear;
+  const shownYear = metaYear ?? year; // stessa fonte della lista (useMeta), così gli anni coincidono sempre
   const six = shots.slice(0, 6); // griglia 3×2: sei screenshot
   const badge = `rounded-full px-2.5 py-0.5 font-semibold ${steam ? "bg-steam/15 text-steam" : "bg-gog/15 text-gog"}`;
 

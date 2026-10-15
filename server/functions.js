@@ -4,8 +4,20 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-// Variabili d'ambiente dal file .env (se esiste): STEAM_API_KEY, DATA_DIR, …
-try { process.loadEnvFile(".env"); } catch { /* nessun .env */ }
+// Variabili d'ambiente dai file .env.local e .env (se esistono), come fa Vite: STEAM_API_KEY, …
+for (const file of [".env.local", ".env"]) {
+  try { process.loadEnvFile(file); } catch { /* file assente */ }
+}
+
+// Messaggio all'avvio: dice chiaramente se la chiave Steam è stata trovata (e perché no).
+export function reportEnv() {
+  const key = process.env.STEAM_API_KEY;
+  if (key) { console.log("  Steam: chiave API trovata"); return; }
+  console.log(key === ""
+    ? "  Steam: nel file .env la chiave è VUOTA. Scrivila dopo STEAM_API_KEY= (senza spazi) e riavvia."
+    : "  Steam: chiave API NON trovata. Copia .env.example in .env (nella cartella del progetto), scrivi STEAM_API_KEY=la_tua_chiave e riavvia.");
+  if (fs.existsSync(".env.txt")) console.log("  ATTENZIONE: esiste un file .env.txt (Windows ha aggiunto .txt): rinominalo in .env");
+}
 
 const PREFIX = "/.netlify/functions/";
 const MAX_BODY = 3_000_000;

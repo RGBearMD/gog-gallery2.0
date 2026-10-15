@@ -1,0 +1,4 @@
+# Solo impostazioni delle funzioni: build e cartella pubblicata restano quelle già configurate su Netlify.
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["sharp"]   # libreria nativa per ridimensionare le copertine (funzione img)

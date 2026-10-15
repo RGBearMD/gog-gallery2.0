@@ -43,7 +43,7 @@ export default function Privacy() {
           <ul className="list-disc space-y-1 pl-5">
             <li>Nessun account, nessuna registrazione, nessun cookie, nessuna statistica, nessuna pubblicità.</li>
             <li>Non salviamo dati personali sui nostri server: la tua libreria resta sul tuo dispositivo.</li>
-            <li>Per mostrare copertine e screenshot, il tuo browser contatta i server di Steam e GOG.</li>
+            <li>Gli screenshot arrivano direttamente da Steam e GOG; le copertine passano dal nostro server, che le ridimensiona per renderle più leggere.</li>
             <li>Questo sito non è affiliato a Valve né a GOG.</li>
           </ul>
         </Section>
@@ -64,7 +64,7 @@ export default function Privacy() {
           <h3 className="pt-1 font-semibold text-fog">Registri tecnici dell'hosting</h3>
           <p>{hosting} registra dati tecnici di ogni richiesta (indirizzo IP, data e ora, indirizzo richiesto, browser) per garantire sicurezza e funzionamento. Li gestisce con i propri tempi di conservazione.</p>
           <h3 className="pt-1 font-semibold text-fog">Servizi di terzi</h3>
-          <p>Copertine e screenshot sono scaricati direttamente dai server di Steam (Valve) e GOG, che quindi vedono il tuo indirizzo IP. I font e le icone sono inclusi nel sito. Il pulsante «Support me on Ko-fi» è un semplice collegamento: Ko-fi riceve dati solo se lo apri.</p>
+          <p>Gli screenshot sono scaricati direttamente dai server di Steam (Valve) e GOG, che quindi vedono il tuo indirizzo IP. Le copertine nelle liste passano invece dal nostro server, che le scarica, le ridimensiona e non le salva: in quel caso Steam e GOG vedono solo il server. I font e le icone sono inclusi nel sito. Il pulsante «Support me on Ko-fi» è un semplice collegamento: Ko-fi riceve dati solo se lo apri.</p>
         </Section>
 
         <Section title="Finalità e basi giuridiche">

@@ -25,6 +25,10 @@ export function normalizeSteamGame(g) {
   };
 }
 
+const absoluteUrl = (u) => (typeof u === "string" && u.startsWith("//") ? `https:${u}` : u);
+// Versione leggera (WebP) di un'immagine, ridimensionata dalla funzione `img` (vedi netlify/functions/img.js)
+export const resizedUrl = (url, width) => (url ? `/.netlify/functions/img?w=${width}&u=${encodeURIComponent(absoluteUrl(url))}` : url);
+
 // URL della pagina del gioco sullo store
 export const storeUrl = (g) => (isSteam(g) ? `https://store.steampowered.com/app/${steamAppId(g)}` : g.url || null);
 

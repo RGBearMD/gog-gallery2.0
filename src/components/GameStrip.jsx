@@ -26,7 +26,7 @@ function Row({ game, year, onSelect }) {
     <div className={`grid gap-1.5 ${steam ? "grid-cols-2" : "grid-cols-3"}`}>
       {!near || loading
         ? Array.from({ length: count }, (_, i) => <ThumbSkeleton key={i} />)
-        : shots.slice(0, count).map((s, i) => <Thumb key={s.thumb} src={s.tiny || s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} eager />)}
+        : shots.slice(0, count).map((s, i) => <Thumb key={s.thumb} src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} eager />)}
       {near && !loading && shots.length === 0 && (
         <p className={`${colspan} text-xs text-muted`}>{failed ? "Screenshot non disponibili in questo momento." : "Nessuno screenshot disponibile."}</p>
       )}
@@ -47,13 +47,13 @@ function Row({ game, year, onSelect }) {
     >
       {steam ? (
         <>
-          <div className="aspect-[2/3] w-14 shrink-0 self-start overflow-hidden rounded-md bg-ink"><Cover game={game} lowPriority /></div>
+          <div className="aspect-[2/3] w-14 shrink-0 self-start overflow-hidden rounded-md bg-ink"><Cover game={game} width={168} lowPriority /></div>
           <div className="flex min-w-0 flex-1 flex-col gap-2">{title}{pictures}</div>
         </>
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <div className="aspect-[460/215] w-28 shrink-0 overflow-hidden rounded-md bg-ink"><Cover game={game} wide lowPriority /></div>
+            <div className="aspect-[460/215] w-28 shrink-0 overflow-hidden rounded-md bg-ink"><Cover game={game} wide width={336} lowPriority /></div>
             {title}
           </div>
           {pictures}

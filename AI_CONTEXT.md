@@ -18,7 +18,7 @@ npm start        # dopo il build: server Node autonomo (sito + funzioni) su http
 npm run lint     # eslint . (copre anche public/, netlify/, server/). Attualmente PULITO
 npm audit        # attualmente 0 vulnerabilità
 ```
-Per provare dal telefono sulla stessa Wi-Fi: `npm run dev -- --host`. Variabili d'ambiente: vedi `.env.example` (`STEAM_API_KEY`; in locale in `.env`, su Netlify nelle Environment variables; vale solo dopo un nuovo deploy). Per i test si possono puntare le API a un finto server con `STEAM_API_BASE` e `STEAM_STORE_BASE`.
+Per provare dal telefono sulla stessa Wi-Fi: `npm run dev -- --host`. **Chiave Steam in locale:** copia `.env.example` in `.env` (stessa cartella di `package.json`, nome esatto `.env`, NON `.env.txt`), scrivi `STEAM_API_KEY=la_chiave` senza spazi e RIAVVIA `npm run dev`: all'avvio il terminale stampa «Steam: chiave API trovata/NON trovata/VUOTA» (legge `.env.local` e `.env`; `.env.example` ha la chiave vuota apposta). Su Netlify la chiave sta in Environment variables e vale dopo un nuovo deploy. Per i test si possono puntare le API a un finto server con `STEAM_API_BASE` e `STEAM_STORE_BASE`, e si può consentire un host di immagini di prova a `img` con `IMG_ALLOW_HOSTS`.
 
 ## 2. Struttura (solo file in uso)
 
@@ -30,8 +30,8 @@ src/main.jsx · src/index.css     font locali; token colore, keyframes (float, s
 src/privacyConfig.js             DATI DEL TITOLARE da compilare prima di pubblicare (nome, email, hosting)
 src/App.jsx                      stato globale, home, header, filtri, rendering progressivo, modalità vista
 src/components/
-  GameStrip.jsx                  Lista. **GOG** (copertina ORIZZONTALE): riga in alto = copertina (112px) + «Titolo - anno», sotto 3 screenshot a tutta larghezza (formato `tiny`). **Steam** (copertina verticale): copertina piccola (56px) a sinistra; accanto «Titolo - anno» e sotto 2 screenshot. TUTTA la scheda apre «Info»
-  GameGrid.jsx                   Cards: copertina 2:3 con titolo, anno e ore in sovraimpressione
+  GameStrip.jsx                  Lista. **GOG** (copertina ORIZZONTALE): riga in alto = copertina (112px) + «Titolo - anno», sotto 3 screenshot a tutta larghezza. **Steam** (copertina verticale): copertina piccola (56px) a sinistra; accanto «Titolo - anno» e sotto 2 screenshot. Miniature = formato MEDIO (Steam 600x338, GOG ggvgm). TUTTA la scheda apre «Info»
+  GameGrid.jsx                   Cards (usata anche dalla Timeline). **Steam:** copertina 2:3 con titolo/anno/ore in sovraimpressione (2–6 colonne). **GOG:** copertina ORIZZONTALE (460/215) con titolo e anno SOTTO (2–5 colonne, mai verticale)
   GameModal.jsx                  «Info»: titolo «Titolo - anno», badge piattaforma cliccabile (→ pagina Steam/GOG), ore giocate e **6 screenshot** (2 colonne×3 righe su mobile, 3×2 su desktop); NESSUN riquadro di dettagli (multiplayer ecc. rimossi); click su uno screenshot → Lightbox
   Timeline.jsx                   modalità Timeline: istogramma + slider anno min→max + giochi di quell'anno, ← →
   FilterSheet.jsx                pannello «Filtra» (bottom sheet): generi con conteggi + avanzamento analisi
@@ -40,7 +40,8 @@ src/components/
   About.jsx                      «Cos'è YGG» con 3 screenshot d'esempio (GIOCHI FITTIZI con arte originale: nessuna immagine di giochi reali)
   KofiButton.jsx                 pulsante Ko-fi con icona SVG incorporata (nessuna richiesta esterna finché non lo tocchi)
   Thumb.jsx · Lightbox.jsx       miniatura con dissolvenza al caricamento; ingrandimento
-  Cover.jsx · Icons.jsx · Sentinel.jsx
+  Cover.jsx                      copertina con catena di ripiego: versione ridimensionata (`img`, se `width`) → originale → immagine orizzontale → nascosta
+  Icons.jsx · Sentinel.jsx
   PublicProfileHelpModal.jsx     guida: come rendere pubblici GOG / «Dettagli dei giochi» di Steam
   Privacy.jsx                    pagina «Privacy e trasparenza» (route `#privacy`, senza router) + «Cancella i dati salvati»
 src/services/
@@ -52,7 +53,9 @@ netlify/functions/               TUTTE nella forma standard `export default asyn
   gog.js                         proxy di gog.com/u/{user}/games/stats
   steamLibrary.js                POST {profile} → libreria Steam (GetOwnedGames, serve STEAM_API_KEY e «Dettagli dei giochi» pubblici). Codici: no_key 501, invalid 400, not_found 404, private 403
   fetchSteamDetails.js           ?appIds=620,730 (max 8) → { items: { id: {screenshots[≤6 {thumb,full}], year}|null }, rateLimited } (appdetails: screenshots, release_date)
-  gameDetails.js                 ?ids=… (GOG, max 6) → { items: { id: {screenshots[≤6 {tiny,thumb,full}], year}|null } }. tiny=ggvgt (lista), thumb=ggvgm (Info), full=ggvgl (solo ingrandimento)
+  gameDetails.js                 ?ids=… (GOG, max 6) → { items: { id: {screenshots[≤6 {thumb,full}], year: null}|null } }. thumb=ggvgm (lista e Info), full=ggvgl (solo ingrandimento). L'ANNO NON si legge qui (vedi «Anno» sotto)
+  img.js                         ?u=<url>&w=<px> → WebP ridimensionato (sharp) delle copertine; accetta solo host GOG/Steam (+ `IMG_ALLOW_HOSTS` nei test), max 12 MB, larghezza 64–800, cache lunga. Se fallisce il client ripiega sull'originale
+netlify.toml                     solo `[functions]`: `external_node_modules = ["sharp"]`
   fetchMeta.js                   ?ids=steam-620,… → { meta: { id: {g: generi, y: anno}|null }, rateLimited, mode }. Steam: IStoreBrowseService (batch, tag community, data uscita) con ripiego su appdetails; GOG: v2 per gioco
 server/functions.js · index.js   adattatore che esegue le funzioni fuori da Netlify; server Node autonomo (carica .env)
 ```
@@ -65,7 +68,11 @@ server/functions.js · index.js   adattatore che esegue le funzioni fuori da Net
 
 **Import:** GOG = username (libreria pubblica). Steam = link/nome/SteamID → `steamLibrary` (l'utente imposta «Dettagli dei giochi» su Pubblico; dopo l'import può rimetterli privati, serve pubblico solo per «Aggiorna»). **Rimossi nel giro 7:** script JS `steam-export.js`, caricamento di `steam_games.json`, codice di trasferimento (`sync`, `purgeSync`, Netlify Blobs): ora non c'è alcun dato personale sul server. Chi ha un profilo Steam che deve restare privato non può importare (compromesso accettato).
 
-**Dettagli di un gioco:** `fetchDetails` (una sola implementazione, in `gameData.js`). Le richieste di più giochi vicini nel tempo (40 ms) sono UNITE in una chiamata (gruppi da 6 Steam / 4 GOG), max 3 chiamate insieme, un secondo tentativo dopo 1,5 s; risultati vuoti non memorizzati. Strip: richiesta solo per le righe vicine allo schermo (`useNearViewport`, margine 900px). Le miniature sono sempre i formati piccoli/medi (Steam `600x338`, GOG `ggvgt`/`ggvgm`); l'alta definizione (`full`) si scarica SOLO all'ingrandimento. Le copertine nella lista hanno `fetchPriority="low"` per lasciare banda agli screenshot.
+**Dettagli di un gioco:** `fetchDetails` (una sola implementazione, in `gameData.js`). Le richieste di più giochi vicini nel tempo (40 ms) sono UNITE in una chiamata (gruppi da 6 Steam / 4 GOG), max 3 chiamate insieme, un secondo tentativo dopo 1,5 s; risultati vuoti non memorizzati. Strip: richiesta solo per le righe vicine allo schermo (`useNearViewport`, margine 900px). Le miniature sono formati medi (Steam `600x338`, GOG `ggvgm`: il formato piccolo `ggvgt` era TROPPO sfocato e non si usa); l'alta definizione (`full`) si scarica SOLO all'ingrandimento.
+
+**Copertine:** nelle liste passano dalla funzione `img` (Strip: Steam 168px, GOG 336px; Cards/Timeline: 420px) perché gli originali sono grandi (GOG: indirizzo grezzo `item.game.image`, formato non verificato). Misurato col mock: 678 KB → 17 KB. Le copertine hanno `fetchPriority="low"` nella Strip per lasciare banda agli screenshot.
+
+**Anno (REGOLA):** una sola fonte per gioco, `useMeta` (`fetchMeta`); i dettagli (`year`) valgono solo come ripiego quando manca (Strip: `meta ?? dettagli`; Modal: `metaYear ?? year`). Motivo: GOG `release_date` = uscita su GOG (es. 2009), non quella originale (1998): lista e Info mostravano anni diversi.
 
 **Anno e generi (`useMeta`):** 50 giochi Steam per richiesta (GOG 6), pausa 1,2 s; se `mode:"single"` (ripiego lento) scende a 4 ogni 5 s; backoff 90 s se Steam limita. Misurato col mock: 332 giochi in ~8 s. `GENRE_TAGS` in `fetchMeta.js` tiene solo i tag che sono generi. L'anno alimenta Strip/Cards/Timeline.
 
@@ -81,7 +88,8 @@ server/functions.js · index.js   adattatore che esegue le funzioni fuori da Net
 - **Giro 5:** font locali, pagina privacy, PWA.
 - **Giro 6:** analisi generi da minuti a ~8 s (batch Steam + tag), pannello «Filtra», multi-account salvati, Steam da profilo.
 - **Giro 7:** `npm audit fix` (0 vulnerabilità; il `package-lock.json` consegnato è già corretto: copiarlo sul progetto evita che gli avvisi tornino); rimossi codice temporaneo e script JS; Timeline; copy da «museo digitale»; sezione «Cos'è YGG» con screenshot d'esempio; pulsante **Ko-fi** (menu ☰ e home) con la promessa «se le donazioni superano 1 €, metà a un'associazione»; rimosso il toggle «Mock»; nuovo logo (home con fluttuazione, header, icone, favicon, og:image).
-- **Giro 8:** formato «Titolo - anno»; Info con 6 screenshot e senza scheda dettagli (multiplayer e `gamePlayers`/PCGamingWiki RIMOSSI, quindi anche la questione licenza CC BY-NC-SA); layout lista diverso per GOG (copertina orizzontale + 3 screenshot) e Steam (copertina più piccola + 2); velocità: richieste unite, margine di anticipo 900px, formato `tiny` GOG, retry, copertine a bassa priorità; testi sullo scopo di YGG; creatore nei crediti e nella privacy.
+- **Giro 8:** formato «Titolo - anno»; Info con 6 screenshot e senza scheda dettagli (multiplayer e `gamePlayers`/PCGamingWiki RIMOSSI); layout lista diverso per GOG (copertina orizzontale + 3 screenshot) e Steam (copertina più piccola + 2); velocità: richieste unite, anticipo 900px, retry, copertine a bassa priorità; testi sullo scopo di YGG; creatore nei crediti e nella privacy.
+- **Giro 9:** miniature GOG di nuovo medie (`tiny` rimosso); Cards e Timeline GOG con copertine ORIZZONTALI; funzione `img` che ridimensiona le copertine (Steam e GOG); anno unico lista/Info (regola sopra); diagnostica della chiave Steam in locale (messaggio all'avvio, `.env.local`, avviso `.env.txt`, errore esplicito in sviluppo).
 
 ## 5. Convenzioni di design
 
@@ -95,7 +103,7 @@ server/functions.js · index.js   adattatore che esegue le funzioni fuori da Net
 
 **Verificato** (Playwright/Chromium mobile e desktop, contro un FINTO server Steam): build, lint, audit; home (logo animato, scopo, About con 3 immagini, Ko-fi, «creato da»); import Steam da profilo; lista Steam e GOG (posizioni di copertina, titolo, miniature; formato «Titolo - anno»); nessun file `1920x1080`/`ggvgl` scaricato nella lista, solo all'ingrandimento; Info (6 screenshot, griglia 2×3/3×2, badge verso lo store, Lightbox); richieste unite (12 giochi → 2 chiamate); messaggio d'errore; Timeline; Dock; menu ☰; produzione: installabilità, icone, nessuna richiesta esterna al caricamento, offline.
 
-**NON verificato con i servizi reali** (nessun accesso di rete dal sandbox): formato di `IStoreBrowseService/GetItems` (`tags`, `release.original_release_date`), `/tagdata/populartags/english`, `appdetails` con `filters=screenshots,release_date`, `GetOwnedGames`, anno e tag GOG (`api.gog.com/v2/games/{id}`), il campo `release_date` e i formati `ggvgt`/`ggvgm`/`ggvgl` di GOG (le dimensioni reali di `ggvgt` non sono note), `game.url` di GOG; **la velocità in produzione non è stata misurata** (solo il numero di chiamate e di byte nel mock); installazione su un telefono Android vero; testo privacy (revisione legale). Se l'anno non compare per tutti i giochi, il primo sospetto è `release` in `fetchMeta.js`.
+**NON verificato con i servizi reali** (nessun accesso di rete dal sandbox): formato di `IStoreBrowseService/GetItems` (`tags`, `release.original_release_date`), `/tagdata/populartags/english`, `appdetails` con `filters=screenshots,release_date`, `GetOwnedGames`, anno e tag GOG (`api.gog.com/v2/games/{id}`), formati `ggvgm`/`ggvgl` di GOG, `game.url` di GOG, **il formato reale dell'indirizzo delle copertine GOG** e che **`sharp` funzioni su Netlify** (provato solo in locale con un server di immagini finto; con `netlify.toml` dovrebbe, altrimenti la copertina ripiega sull'originale); **la velocità in produzione non è stata misurata**; installazione su un telefono Android vero; testo privacy (revisione legale). Se l'anno non compare per tutti i giochi, il primo sospetto è `release` in `fetchMeta.js`.
 
 ## 7. Limiti noti e backlog
 
@@ -110,7 +118,7 @@ server/functions.js · index.js   adattatore che esegue le funzioni fuori da Net
 1. Leggi i file coinvolti; non riscrivere ciò che funziona. Una sola implementazione per cosa (dettagli solo in `gameData.js`).
 2. Formato risposta delle funzioni di dettaglio: `{ screenshots:[{thumb,full}], year, local, online }`. Non cambiarlo senza aggiornare `gameData.js`.
 3. Dopo ogni modifica: `npm run lint`, `npm run build`, `npm audit`. Prova in locale (`npm run dev`) con viewport mobile; niente deploy di produzione per ogni prova.
-4. Non reintrodurre `backdrop-blur` persistente, immagini `full` nelle griglie, liste intere nel DOM, richieste a servizi esterni dal browser (font, icone) senza aggiornare la pagina privacy.
+4. Non reintrodurre `backdrop-blur` persistente, immagini `full` o originali non ridimensionati nelle liste, liste intere nel DOM, copertine GOG verticali, un secondo calcolo dell'anno diverso da `useMeta`, richieste a servizi esterni dal browser (font, icone) senza aggiornare la pagina privacy.
 5. Se cambi cosa viene raccolto/inviato, aggiorna `Privacy.jsx` e questo file. Compila `src/privacyConfig.js` prima di pubblicare.
 6. Dichiara cosa non hai potuto testare (API reali).
 7. **Consegna:** zip con i file **alla radice** (niente cartella contenitore), senza `node_modules`, `dist`, `.env`, file `*.zip`, backup o file inutilizzati. Includi sempre il `package-lock.json` aggiornato.

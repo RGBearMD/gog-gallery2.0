@@ -1,17 +1,21 @@
-import { coverUrl } from "../services/gameData";
+import { coverUrl, resizedUrl } from "../services/gameData";
 
-// wide = usa l'immagine orizzontale originale (banner), altrimenti la copertina verticale.
-export default function Cover({ game, wide = false, lowPriority = false, className = "" }) {
+// width: se indicato, la copertina passa dalla funzione `img` (versione leggera);
+// se non risponde si ripiega sull'originale, e poi sull'immagine orizzontale.
+export default function Cover({ game, wide = false, lowPriority = false, width, className = "" }) {
+  const original = wide ? game.cover : coverUrl(game);
+  const chain = [...new Set([width && original ? resizedUrl(original, width) : null, original, game.cover].filter(Boolean))];
   return (
     <img
-      src={wide ? game.cover : coverUrl(game)}
+      src={chain[0]}
       alt={game.title}
       loading="lazy"
       decoding="async"
       fetchPriority={lowPriority ? "low" : "auto"}
       onError={(e) => {
         const t = e.currentTarget;
-        if (!t.dataset.fb && game.cover) { t.dataset.fb = "1"; t.src = game.cover; }
+        const stage = Number(t.dataset.stage) || 0;
+        if (chain[stage + 1]) { t.dataset.stage = String(stage + 1); t.src = chain[stage + 1]; }
         else t.style.visibility = "hidden";
       }}
       className={`h-full w-full object-cover ${className}`}
