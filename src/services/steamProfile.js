@@ -3,7 +3,9 @@ const MESSAGES = {
   private: "Non vedo giochi: su Steam imposta «Dettagli dei giochi» su Pubblico (Profilo → Modifica profilo → Impostazioni privacy) e riprova.",
   not_found: "Profilo non trovato: controlla il nome o il link.",
   invalid: "Inserisci il link del profilo, il nome profilo o lo SteamID.",
-  no_key: "Il collegamento a Steam non è ancora configurato su questo sito. Riprova più tardi.",
+  no_key: import.meta.env.DEV
+    ? "Chiave Steam non trovata. In locale: copia .env.example in .env (nella cartella del progetto), scrivi STEAM_API_KEY=la_tua_chiave e riavvia npm run dev. Il terminale indica cosa trova."
+    : "Il collegamento a Steam non è ancora configurato su questo sito. Riprova più tardi.",
 };
 
 export async function fetchSteamProfile(profile) {

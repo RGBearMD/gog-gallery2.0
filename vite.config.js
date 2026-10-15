@@ -1,8 +1,8 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import fs from "node:fs";
-import { handleFunction } from "./server/functions.js";
+import { handleFunction, reportEnv } from "./server/functions.js";
 
 // Con `npm run dev` / `npm run preview` le funzioni di netlify/functions/ girano in locale:
 // niente Netlify, niente crediti.
@@ -10,7 +10,15 @@ function localFunctions() {
   const mount = (server) => {
     server.middlewares.use((req, res, next) => handleFunction(req, res, { fresh: true }).then((handled) => handled || next()));
   };
-  return { name: "local-netlify-functions", configureServer: mount, configurePreviewServer: mount };
+  return {
+    name: "local-netlify-functions",
+    // Le funzioni girano in questo processo: porto qui anche le variabili di .env, .env.local e .env.<mode>
+    config(_, { mode }) {
+      for (const [key, value] of Object.entries(loadEnv(mode, process.cwd(), ""))) if (process.env[key] === undefined) process.env[key] = value;
+    },
+    configureServer(server) { mount(server); reportEnv(); },
+    configurePreviewServer(server) { mount(server); reportEnv(); },
+  };
 }
 
 // Ad ogni build il service worker riceve un numero di versione nuovo: le vecchie copie salvate si eliminano da sole.

@@ -3,7 +3,7 @@
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
-import { handleFunction } from "./functions.js";
+import { handleFunction, reportEnv } from "./functions.js";
 
 const DIST = path.resolve("dist");
 const PORT = Number(process.env.PORT) || 8888;
@@ -30,4 +30,4 @@ http.createServer(async (req, res) => {
   // file con hash: cache lunga; tutto il resto (pagina, sw.js, manifest) sempre ricontrollato
   res.setHeader("Cache-Control", pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache");
   fs.createReadStream(file).pipe(res);
-}).listen(PORT, () => console.log(`Your Games Gallery in ascolto su http://localhost:${PORT}`));
+}).listen(PORT, () => { console.log(`Your Games Gallery in ascolto su http://localhost:${PORT}`); reportEnv(); });
