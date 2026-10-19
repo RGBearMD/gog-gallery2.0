@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isSteam } from "./gameData";
+import { isSteam, isEpicOnly } from "./gameData";
 
 // Metadati di tutta la libreria (generi + anno di uscita), letti in background e ricordati per sempre.
 const KEY = "ygg:meta:v1"; // { [id]: { g: string[], y: number|null } }
@@ -31,7 +31,7 @@ export function useMeta(games) {
     (async () => {
       let steamBatch = STEAM_BATCH, pause = PAUSE_MS, limited = 0, guard = games.length * 2 + 10;
       while (!dead && guard-- > 0) {
-        const pending = games.filter((g) => !(String(g.id) in getCache()) && (tries[g.id] || 0) < 2);
+        const pending = games.filter((g) => !isEpicOnly(g) && !(String(g.id) in getCache()) && (tries[g.id] || 0) < 2);
         if (!pending.length) break;
         const steam = isSteam(pending[0]);
         const todo = pending.filter((g) => isSteam(g) === steam).slice(0, steam ? steamBatch : GOG_BATCH);

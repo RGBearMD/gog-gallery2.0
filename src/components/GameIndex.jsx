@@ -4,7 +4,7 @@ import KofiButton from "./KofiButton";
 
 const collator = new Intl.Collator("it", { sensitivity: "base", numeric: true });
 
-export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, onInstall }) {
+export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, onInstall, onHome }) {
   const [q, setQ] = useState("");
   const sorted = useMemo(() => [...games].sort((a, b) => collator.compare(a.title, b.title)), [games]); // ordine alfabetico
   if (!isOpen) return null;
@@ -35,8 +35,10 @@ export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, 
             <Icon name="download" className="size-4" /> Scarica lista
           </button>
           <KofiButton compact />
-          <p className="px-1 text-center text-[11px] leading-snug text-muted">Se le donazioni supereranno 1 €, metà dell'importo sarà devoluta a un'associazione.</p>
           <a href="#privacy" onClick={onClose} className="block text-center text-xs text-muted hover:text-fog">Privacy e trasparenza</a>
+          <button onClick={onHome} className="flex w-full items-center justify-center gap-2 rounded-lg border border-line py-2.5 text-xs font-semibold hover:bg-raised">
+            <img src="/logo-sm.webp" alt="" width="30" height="26" className="h-5 w-auto" /> Torna alla home
+          </button>
         </div>
       </aside>
     </div>

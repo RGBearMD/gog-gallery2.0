@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Lightbox from "./Lightbox";
 import Thumb, { ThumbSkeleton } from "./Thumb";
 import { Icon } from "./Icons";
-import { useGameDetails, hoursPlayed, isSteam, storeUrl } from "../services/gameData";
+import { useGameDetails, hoursPlayed, platformName, platformClasses, storeUrl } from "../services/gameData";
 
 export default function GameModal({ game, metaYear, onClose }) {
   const { shots, year, loading, failed } = useGameDetails(game);
@@ -16,11 +16,11 @@ export default function GameModal({ game, metaYear, onClose }) {
   }, [game, zoom, onClose]);
 
   if (!game) return null;
-  const steam = isSteam(game);
+  const name = platformName(game);
   const url = storeUrl(game);
   const shownYear = metaYear ?? year; // stessa fonte della lista (useMeta), così gli anni coincidono sempre
   const six = shots.slice(0, 6); // griglia 3×2: sei screenshot
-  const badge = `rounded-full px-2.5 py-0.5 font-semibold ${steam ? "bg-steam/15 text-steam" : "bg-gog/15 text-gog"}`;
+  const badge = `rounded-full px-2.5 py-0.5 font-semibold ${platformClasses(game)}`;
 
   return (
     <>
@@ -33,8 +33,8 @@ export default function GameModal({ game, metaYear, onClose }) {
           </h2>
           <div className="mb-5 mt-2 flex flex-wrap items-center gap-2 text-xs">
             {url
-              ? <a href={url} target="_blank" rel="noopener noreferrer" title={`Apri la pagina del gioco su ${steam ? "Steam" : "GOG"}`} className={`${badge} hover:brightness-125`}>{steam ? "Steam" : "GOG"} ↗</a>
-              : <span className={badge}>{steam ? "Steam" : "GOG"}</span>}
+              ? <a href={url} target="_blank" rel="noopener noreferrer" title={`Apri la pagina del gioco su ${name}`} className={`${badge} hover:brightness-125`}>{name} ↗</a>
+              : <span className={badge}>{name}</span>}
             {game.playtime > 0 && <span className="rounded-full bg-raised px-2.5 py-0.5 text-muted">{hoursPlayed(game)} h giocate</span>}
           </div>
 
