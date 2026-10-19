@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
 // ── Utility comuni ───────────────────────────────────────────
+// Giochi Epic: se trovati nel catalogo Steam hanno id "steam-<appId>" (quindi dati e immagini di Steam) ma platform "Epic";
+// gli altri (solo Epic) non hanno nessuna fonte di screenshot, anno o generi.
+export const isEpic = (g) => g?.platform === "Epic";
 export const isSteam = (g) => g?.platform === "Steam" || g?.appId != null || String(g?.id).startsWith("steam-");
 const steamAppId = (g) => g.appId ?? parseInt(String(g.id).replace("steam-", ""), 10);
 
@@ -8,6 +11,11 @@ export const coverUrl = (g) =>
   isSteam(g) && steamAppId(g)
     ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${steamAppId(g)}/library_600x900.jpg`
     : g.cover;
+
+export const isEpicOnly = (g) => isEpic(g) && !isSteam(g);
+export const isLandscape = (g) => !isSteam(g) && !isEpic(g); // copertina orizzontale: solo GOG
+export const platformName = (g) => (isEpic(g) ? "Epic" : isSteam(g) ? "Steam" : "GOG");
+export const platformClasses = (g) => (isEpic(g) ? "bg-epic/15 text-epic" : isSteam(g) ? "bg-steam/15 text-steam" : "bg-gog/15 text-gog");
 
 export const hoursPlayed = (g) => (Math.round(((g.playtime || 0) / 60) * 10) / 10).toLocaleString("it-IT");
 
@@ -30,7 +38,8 @@ const absoluteUrl = (u) => (typeof u === "string" && u.startsWith("//") ? `https
 export const resizedUrl = (url, width) => (url ? `/.netlify/functions/img?w=${width}&u=${encodeURIComponent(absoluteUrl(url))}` : url);
 
 // URL della pagina del gioco sullo store
-export const storeUrl = (g) => (isSteam(g) ? `https://store.steampowered.com/app/${steamAppId(g)}` : g.url || null);
+export const storeUrl = (g) =>
+  isEpic(g) ? `https://store.epicgames.com/browse?q=${encodeURIComponent(g.title)}` : isSteam(g) ? `https://store.steampowered.com/app/${steamAppId(g)}` : g.url || null;
 
 // ── Dettagli del gioco (screenshot + anno): UN solo punto per Strip, Cards e Modal ──
 // Le richieste di più giochi vicini nel tempo vengono UNITE in una sola chiamata al server (6 Steam / 4 GOG).
@@ -103,6 +112,7 @@ function cached(key) {
 }
 
 export async function fetchDetails(game) {
+  if (isEpicOnly(game)) return { shots: [], year: null, failed: false }; // nessuna fonte di dettagli per i giochi solo-Epic
   const key = String(game.id);
   const hit = cached(key);
   if (hit) return hit;

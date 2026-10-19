@@ -8,7 +8,7 @@ const json = (status, body, cache = "no-store") =>
 const rate = () => Object.assign(new Error("rate"), { rate: true });
 const STORE = () => process.env.STEAM_STORE_BASE || "https://store.steampowered.com";
 const WEBAPI = () => process.env.STEAM_API_BASE || "https://api.steampowered.com";
-const yearOf = (text) => { const m = String(text || "").match(/\b(19[7-9]\d|20\d\d)\b/); return m ? Number(m[1]) : null; };
+const yearOf = (text) => { const m = String(text || "").match(/\b(19[89]\d|20\d\d)\b/); return m ? Number(m[1]) : null; };
 
 // Dei tanti tag di Steam teniamo solo quelli che sono davvero generi.
 const GENRE_TAGS = new Set([

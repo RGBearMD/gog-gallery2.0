@@ -10,16 +10,29 @@ const Step = ({ n, title, children }) => (
 export default function PublicProfileHelpModal({ isOpen, onClose, platform = "gog" }) {
   if (!isOpen) return null;
   const isGog = platform === "gog";
+  const isEpic = platform === "epic";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in" onClick={onClose}>
       <div className="custom-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-line/70 bg-panel p-6 md:p-8" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-start justify-between gap-4">
-          <h2 className="text-xl font-bold md:text-2xl">{isGog ? "Importare la libreria GOG" : "Importare la libreria Steam"}</h2>
+          <h2 className="text-xl font-bold md:text-2xl">{isGog ? "Importare la libreria GOG" : isEpic ? "Importare la libreria Epic Games" : "Importare la libreria Steam"}</h2>
           <button onClick={onClose} aria-label="Chiudi" className="text-muted hover:text-fog"><Icon name="close" /></button>
         </div>
 
-        {isGog ? (
+        {isEpic ? (
+          <>
+            <p className="mb-4 text-sm text-muted">Epic non permette a un sito di leggere la libreria, e YGG non accede mai al tuo account Epic. Importi invece un file che ottieni tu, con un programma gratuito e open-source.</p>
+            <ol className="space-y-4">
+              <Step n="1" title="Installa Legendary">Su GitHub trovi Legendary, un launcher alternativo per Epic (per esempio <code className="rounded bg-raised px-1.5">pip install legendary-gl</code>).</Step>
+              <Step n="2" title="Accedi">Nel terminale scrivi <code className="rounded bg-raised px-1.5">legendary auth</code>: il login avviene nel browser, sul sito di Epic.</Step>
+              <Step n="3" title="Esporta l'elenco">Scrivi <code className="rounded bg-raised px-1.5">legendary list --json &gt; epic.json</code> (va bene anche <code className="rounded bg-raised px-1.5">--csv</code>) e carica qui il file.</Step>
+            </ol>
+            <p className="mt-5 rounded-xl border border-spark/30 bg-spark/10 p-3 text-xs text-muted">
+              Funziona anche con un semplice elenco di titoli (uno per riga) o con il file della libreria di Heroic Games Launcher. YGG cerca i titoli nel catalogo Steam per recuperare copertine, screenshot e anno: i giochi che esistono solo su Epic mostrano solo il titolo.
+            </p>
+          </>
+        ) : isGog ? (
           <ol className="space-y-4">
             <Step n="1" title="Accedi a GOG">Entra su GOG.com con il tuo account.</Step>
             <Step n="2" title="Apri la privacy">Dalle impostazioni dell'account vai nella scheda <strong>Privacy</strong>.</Step>

@@ -59,6 +59,10 @@ export default function Privacy() {
           <p>L'username che inserisci viene inviato alla nostra funzione, che lo inoltra a gog.com per leggere la tua libreria (deve essere pubblica). Non lo salviamo sui nostri server. Compare però nell'indirizzo della richiesta, quindi può restare nei registri tecnici dell'hosting.</p>
           <h3 className="pt-1 font-semibold text-fog">Importazione da Steam</h3>
           <p>Il link del profilo, il nome profilo o lo SteamID che scrivi viene inviato (nel corpo della richiesta, non nell'indirizzo) alla nostra funzione, che lo inoltra a Steam per leggere i tuoi giochi: funziona solo se i «Dettagli dei giochi» sono pubblici. Non lo salviamo sui nostri server. Dopo l'importazione puoi rimettere il profilo privato.</p>
+          <h3 className="pt-1 font-semibold text-fog">Importazione da Epic Games</h3>
+          <p>Epic non offre un accesso pubblico alla libreria e YGG non vede mai le tue credenziali Epic. Il file che carichi (esportato da te con Legendary o Heroic, oppure un elenco di titoli) viene letto dal tuo browser; i titoli dei giochi sono inviati alla nostra funzione, che li cerca nel catalogo Steam per recuperare copertine, screenshot e anno. Non li salviamo sui nostri server.</p>
+          <h3 className="pt-1 font-semibold text-fog">Giochi doppi</h3>
+          <p>Il confronto tra le tue librerie (per esempio lo stesso gioco su Steam e su GOG) avviene solo sul tuo dispositivo.</p>
           <h3 className="pt-1 font-semibold text-fog">Anno, generi e screenshot</h3>
           <p>Per queste informazioni inviamo ai nostri server gli ID dei giochi, che li chiedono a Steam e GOG. L'analisi di anno e generi parte in automatico dopo l'importazione e invia, a gruppi (fino a 50 giochi per volta), gli ID di tutti i giochi della libreria. Gli ID compaiono nell'indirizzo delle richieste e quindi nei registri tecnici dell'hosting. I risultati restano sul tuo dispositivo.</p>
           <h3 className="pt-1 font-semibold text-fog">Registri tecnici dell'hosting</h3>

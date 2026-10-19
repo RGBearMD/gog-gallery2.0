@@ -1,9 +1,9 @@
 import Cover from "./Cover";
-import { hoursPlayed, prefetchDetails, isSteam } from "../services/gameData";
+import { hoursPlayed, prefetchDetails, isLandscape } from "../services/gameData";
 
 // Cards. Steam: copertina verticale con titolo in sovraimpressione. GOG: copertina ORIZZONTALE con il titolo sotto.
-export default function GameGrid({ games, onSelect, meta = {} }) {
-  const steam = games.length ? isSteam(games[0]) : true;
+export default function GameGrid({ games, onSelect, meta = {}, dupOf }) {
+  const steam = games.length ? !isLandscape(games[0]) : true; // verticale: Steam ed Epic
   const cols = steam
     ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
     : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
@@ -13,14 +13,16 @@ export default function GameGrid({ games, onSelect, meta = {} }) {
       {games.map((game) => {
         const year = meta[game.id]?.y;
         const hours = game.playtime > 0 ? `${hoursPlayed(game)} h` : null;
-        const info = (year || hours) && (
+        const dup = dupOf?.get(game.id);
+        const info = (year || hours || dup) && (
           <p className="mt-0.5 text-[11px] text-muted">
             {year && <span className="font-semibold text-spark">{year}</span>}{year && hours && " · "}{hours}
+            {dup?.length > 0 && <span className="block font-semibold text-spark">Anche su {dup.join(", ")}</span>}
           </p>
         );
         const common = { id: `game-${game.id}`, onPointerDown: () => prefetchDetails(game), onClick: () => onSelect(game) };
 
-        return isSteam(game) ? (
+        return !isLandscape(game) ? (
           <button key={game.id} {...common} className="group relative aspect-[2/3] overflow-hidden rounded-xl border border-line/60 bg-panel text-left transition-transform duration-200 hover:-translate-y-1 hover:border-spark/70">
             <Cover game={game} width={420} className="transition-transform duration-300 group-hover:scale-105" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-2.5 pt-8">

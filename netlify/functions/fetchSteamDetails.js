@@ -14,7 +14,7 @@ async function one(appId) {
   const d = data[appId]?.data || {};
   return {
     screenshots: (d.screenshots || []).slice(0, 6).map((s) => ({ thumb: s.path_thumbnail, full: s.path_full })).filter((s) => s.thumb),
-    year: Number((String(d.release_date?.date || "").match(/\b(19[7-9]\d|20\d\d)\b/) || [])[1]) || null,
+    year: Number((String(d.release_date?.date || "").match(/\b(19[89]\d|20\d\d)\b/) || [])[1]) || null,
   };
 }
 
