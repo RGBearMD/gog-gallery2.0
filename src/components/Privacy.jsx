@@ -1,18 +1,15 @@
 import { useEffect } from "react";
 import { Icon } from "./Icons";
+import LangToggle from "./LangToggle";
 import { PRIVACY } from "../privacyConfig";
+import { useI18n } from "../i18n/context";
+import TEXTS from "../i18n/privacy";
 
-function Section({ title, children }) {
-  return (
-    <section className="rounded-2xl border border-line/60 bg-panel p-5">
-      <h2 className="mb-2 text-lg font-bold">{title}</h2>
-      <div className="space-y-2 text-sm leading-relaxed text-fog/90">{children}</div>
-    </section>
-  );
-}
+// Testo con <b>…</b>
+const bold = (text, key) => text.split(/(<b>.*?<\/b>)/).map((p, i) => (p.startsWith("<b>") ? <strong key={`${key}-${i}`}>{p.slice(3, -4)}</strong> : p));
 
-function clearLocalData() {
-  if (!window.confirm("Cancellare librerie, screenshot e dati salvati su questo dispositivo?")) return;
+function clearLocalData(message) {
+  if (!window.confirm(message)) return;
   Object.keys(localStorage).filter((k) => k.startsWith("ygg:")).forEach((k) => localStorage.removeItem(k));
   if ("caches" in window) caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
   window.location.hash = "";
@@ -20,89 +17,50 @@ function clearLocalData() {
 }
 
 export default function Privacy() {
+  const { lang, locale } = useI18n();
+  const d = TEXTS[lang];
   const { controllerName, contactEmail, hosting, lastUpdate } = PRIVACY;
-  const missing = [!controllerName && "il nome", !contactEmail && "l'email di contatto"].filter(Boolean).join(" e ");
+  const missing = [!controllerName && d.missingName, !contactEmail && d.missingEmail].filter(Boolean).join(d.and);
   useEffect(() => window.scrollTo(0, 0), []);
   const mail = contactEmail && <a className="text-spark underline" href={`mailto:${contactEmail}`}>{contactEmail}</a>;
+  const garante = <a className="text-spark underline" href="https://www.garanteprivacy.it" target="_blank" rel="noreferrer">{d.garante}</a>;
+
+  // Sostituisce segnaposto e collegamenti nel testo
+  function rich(text, key) {
+    return text.replace("{hosting}", hosting).replace("{controller}", controllerName || "—").split(/(\[\[\w+\]\])/).map((part, i) => {
+      const token = part.match(/^\[\[(\w+)\]\]$/)?.[1];
+      const k = `${key}-${i}`;
+      if (token === "mail") return mail ? <span key={k}> · {mail}</span> : null;
+      if (token === "mailTo") { if (!mail) return null; const [a, b] = d.mailTo.split("{mail}"); return <span key={k}>{a}{mail}{b}</span>; }
+      if (token === "garante") return <span key={k}>{garante}</span>;
+      return bold(part, k);
+    });
+  }
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-line/60 bg-ink px-3">
-        <a href="#" className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold hover:bg-raised"><Icon name="prev" className="size-4" /> Galleria</a>
-        <h1 className="flex-1 truncate font-display text-lg font-bold tracking-tight">Privacy e trasparenza</h1>
+        <a href="#" className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold hover:bg-raised"><Icon name="prev" className="size-4" /> {d.back}</a>
+        <h1 className="flex-1 truncate font-display text-lg font-bold tracking-tight">{d.title}</h1>
+        <LangToggle />
       </header>
 
       <main className="mx-auto flex max-w-2xl flex-col gap-4 px-3 pb-16 pt-5">
-        {missing && (
-          <p role="alert" className="rounded-xl border border-spark/50 bg-spark/10 p-3 text-sm text-spark">
-            Dati del titolare incompleti: manca {missing}. Apri <code>src/privacyConfig.js</code> prima di pubblicare.
-          </p>
-        )}
+        {missing && <p role="alert" className="rounded-xl border border-spark/50 bg-spark/10 p-3 text-sm text-spark">{d.incomplete.replace("{missing}", missing)}</p>}
 
-        <Section title="In breve">
-          <ul className="list-disc space-y-1 pl-5">
-            <li>Nessun account, nessuna registrazione, nessun cookie, nessuna statistica, nessuna pubblicità.</li>
-            <li>Non salviamo dati personali sui nostri server: la tua libreria resta sul tuo dispositivo.</li>
-            <li>Gli screenshot arrivano direttamente da Steam e GOG; le copertine passano dal nostro server, che le ridimensiona per renderle più leggere.</li>
-            <li>Questo sito non è affiliato a Valve né a GOG.</li>
-          </ul>
-        </Section>
+        {d.sections.map((s, si) => (
+          <section key={si} className="rounded-2xl border border-line/60 bg-panel p-5">
+            <h2 className="mb-2 text-lg font-bold">{s.title}</h2>
+            <div className="space-y-2 text-sm leading-relaxed text-fog/90">
+              {s.blocks.map((b, bi) => b.h ? <h3 key={bi} className="pt-1 font-semibold text-fog">{b.h}</h3>
+                : b.ul ? <ul key={bi} className="list-disc space-y-1 pl-5">{b.ul.map((li, i) => <li key={i}>{rich(li, `${si}${bi}${i}`)}</li>)}</ul>
+                : <p key={bi}>{rich(b.p, `${si}${bi}`)}</p>)}
+            </div>
+          </section>
+        ))}
 
-        <Section title="Chi è il titolare">
-          <p>{controllerName || "—"}{mail && <> · {mail}</>}</p>
-        </Section>
-
-        <Section title="Cosa succede ai tuoi dati">
-          <h3 className="font-semibold text-fog">Sul tuo dispositivo</h3>
-          <p>Il browser conserva le librerie importate (con l'username GOG o il profilo Steam usati, per riaprirle e aggiornarle), i dettagli già scaricati (screenshot, anno, generi) e i file dell'app, per aprirla anche senza rete. Servono a far funzionare il servizio che richiedi e non vengono inviati a nessuno. Puoi cancellarli in ogni momento con il pulsante in fondo.</p>
-          <h3 className="pt-1 font-semibold text-fog">Importazione da GOG</h3>
-          <p>L'username che inserisci viene inviato alla nostra funzione, che lo inoltra a gog.com per leggere la tua libreria (deve essere pubblica). Non lo salviamo sui nostri server. Compare però nell'indirizzo della richiesta, quindi può restare nei registri tecnici dell'hosting.</p>
-          <h3 className="pt-1 font-semibold text-fog">Importazione da Steam</h3>
-          <p>Il link del profilo, il nome profilo o lo SteamID che scrivi viene inviato (nel corpo della richiesta, non nell'indirizzo) alla nostra funzione, che lo inoltra a Steam per leggere i tuoi giochi: funziona solo se i «Dettagli dei giochi» sono pubblici. Non lo salviamo sui nostri server. Dopo l'importazione puoi rimettere il profilo privato.</p>
-          <h3 className="pt-1 font-semibold text-fog">Importazione da Epic Games</h3>
-          <p>Epic non offre un accesso pubblico alla libreria e YGG non vede mai le tue credenziali Epic. Il file che carichi (esportato da te con Legendary o Heroic, oppure un elenco di titoli) viene letto dal tuo browser; i titoli dei giochi sono inviati alla nostra funzione, che li cerca nel catalogo Steam per recuperare copertine, screenshot e anno. Non li salviamo sui nostri server.</p>
-          <h3 className="pt-1 font-semibold text-fog">Giochi doppi</h3>
-          <p>Il confronto tra le tue librerie (per esempio lo stesso gioco su Steam e su GOG) avviene solo sul tuo dispositivo.</p>
-          <h3 className="pt-1 font-semibold text-fog">Anno, generi e screenshot</h3>
-          <p>Per queste informazioni inviamo ai nostri server gli ID dei giochi, che li chiedono a Steam e GOG. L'analisi di anno e generi parte in automatico dopo l'importazione e invia, a gruppi (fino a 50 giochi per volta), gli ID di tutti i giochi della libreria. Gli ID compaiono nell'indirizzo delle richieste e quindi nei registri tecnici dell'hosting. I risultati restano sul tuo dispositivo.</p>
-          <h3 className="pt-1 font-semibold text-fog">Registri tecnici dell'hosting</h3>
-          <p>{hosting} registra dati tecnici di ogni richiesta (indirizzo IP, data e ora, indirizzo richiesto, browser) per garantire sicurezza e funzionamento. Li gestisce con i propri tempi di conservazione.</p>
-          <h3 className="pt-1 font-semibold text-fog">Servizi di terzi</h3>
-          <p>Gli screenshot sono scaricati direttamente dai server di Steam (Valve) e GOG, che quindi vedono il tuo indirizzo IP. Le copertine nelle liste passano invece dal nostro server, che le scarica, le ridimensiona e non le salva: in quel caso Steam e GOG vedono solo il server. I font e le icone sono inclusi nel sito. Il pulsante «Support me on Ko-fi» è un semplice collegamento: Ko-fi riceve dati solo se lo apri.</p>
-        </Section>
-
-        <Section title="Finalità e basi giuridiche">
-          <p>Far funzionare il servizio che richiedi (art. 6, par. 1, lett. b, GDPR) e garantire sicurezza e funzionamento del sito tramite i registri tecnici (lett. f, legittimo interesse). La memoria locale del browser è uno strumento tecnico legato al servizio richiesto.</p>
-        </Section>
-
-        <Section title="Per quanto tempo">
-          <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Sul dispositivo:</strong> finché non li cancelli.</li>
-            <li><strong>Sui nostri server:</strong> nessun dato personale viene conservato.</li>
-            <li><strong>Registri tecnici:</strong> secondo il fornitore di hosting.</li>
-          </ul>
-        </Section>
-
-        <Section title="Destinatari e trasferimenti">
-          <p>{hosting} ospita il sito e le funzioni per nostro conto. Steam e GOG ricevono le richieste necessarie a fornire immagini e dati. Il fornitore può trattare dati anche fuori dallo Spazio Economico Europeo: in tal caso si applicano le garanzie previste dal GDPR (artt. 44 e seguenti).</p>
-        </Section>
-
-        <Section title="I tuoi diritti">
-          <p>Puoi chiedere accesso, rettifica, cancellazione, limitazione, opposizione e portabilità (artt. 15–22 GDPR){mail ? <> scrivendo a {mail}</> : ""}. Rispondiamo entro un mese. Puoi anche presentare reclamo al <a className="text-spark underline" href="https://www.garanteprivacy.it" target="_blank" rel="noreferrer">Garante per la protezione dei dati personali</a>.</p>
-        </Section>
-
-        <Section title="Sicurezza">
-          <p>La connessione al sito è cifrata (HTTPS), non ci sono password da custodire e raccogliamo il minimo indispensabile.</p>
-        </Section>
-
-        <Section title="Fonti dei dati e marchi">
-          <p>Informazioni sui giochi: Steam e GOG. Steam è un marchio di Valve Corporation e GOG un marchio di GOG sp. z o.o. Questo sito non è affiliato né approvato da loro.</p>
-        </Section>
-
-        <button onClick={clearLocalData} className="rounded-xl border border-red-500/40 bg-red-950/40 py-3 text-sm font-bold text-red-200 hover:bg-red-950/70">
-          Cancella i dati salvati su questo dispositivo
-        </button>
-        <p className="text-center text-xs text-muted">Ultimo aggiornamento: {lastUpdate}</p>
+        <button onClick={() => clearLocalData(d.confirmClear)} className="rounded-xl border border-red-500/40 bg-red-950/40 py-3 text-sm font-bold text-red-200 hover:bg-red-950/70">{d.clear}</button>
+        <p className="text-center text-xs text-muted">{d.updated.replace("{date}", new Date(lastUpdate).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" }))}</p>
       </main>
     </div>
   );

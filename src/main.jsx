@@ -9,10 +9,13 @@ import '@fontsource/dm-sans/latin-500.css'
 import '@fontsource/dm-sans/latin-700.css'
 import './index.css'
 import App from './App.jsx'
+import I18nProvider from './i18n/I18nProvider.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </StrictMode>,
 )
 

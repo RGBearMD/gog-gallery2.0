@@ -1,3 +1,5 @@
+import { i18nError } from "./errors";
+
 export async function getAllGames(username) {
     const first = await fetch(
         `/.netlify/functions/gog?user=${username}&page=1`
@@ -11,7 +13,7 @@ export async function getAllGames(username) {
         firstData = JSON.parse(text);
     } catch {
         console.error("Risposta non JSON:", text);
-        throw new Error("Risposta non valida da GOG: controlla che l'username sia corretto e il profilo pubblico.");
+        throw i18nError("err.gog");
     }
 
     const pages = firstData.pages;

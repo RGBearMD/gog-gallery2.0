@@ -3,11 +3,13 @@ import Cover from "./Cover";
 import Thumb, { ThumbSkeleton } from "./Thumb";
 import { useGameDetails, prefetchDetails, isLandscape } from "../services/gameData";
 import { useNearViewport } from "../services/viewport";
+import { useI18n } from "../i18n/context";
 
 // Scheda della lista. Tutta la scheda apre «Info».
 //  - GOG (copertina orizzontale): in alto copertina + «Titolo - anno», sotto 3 screenshot a tutta larghezza.
 //  - Steam (copertina verticale): copertina piccola a sinistra; accanto «Titolo - anno» e sotto 2 screenshot.
 function Row({ game, year, dup, onSelect }) {
+  const { t } = useI18n();
   const ref = useRef(null);
   const near = useNearViewport(ref, "900px"); // i dati si chiedono poco prima che la riga arrivi sullo schermo
   const { shots, year: detailYear, loading, failed } = useGameDetails(game, near);
@@ -22,14 +24,14 @@ function Row({ game, year, dup, onSelect }) {
     </h3>
   );
   const colspan = steam ? "col-span-2" : "col-span-3";
-  const dupBadge = dup?.length ? <p className="text-[11px] font-semibold text-spark">Anche su {dup.join(", ")}</p> : null;
+  const dupBadge = dup?.length ? <p className="text-[11px] font-semibold text-spark">{t("strip.also", { list: dup.join(", ") })}</p> : null;
   const pictures = (
     <div className={`grid gap-1.5 ${steam ? "grid-cols-2" : "grid-cols-3"}`}>
       {!near || loading
         ? Array.from({ length: count }, (_, i) => <ThumbSkeleton key={i} />)
-        : shots.slice(0, count).map((s, i) => <Thumb key={s.thumb} src={s.thumb} alt={`${game.title}, screenshot ${i + 1}`} delay={i * 60} eager />)}
+        : shots.slice(0, count).map((s, i) => <Thumb key={s.thumb} src={s.thumb} alt={t("aria.shotsOf", { title: game.title, i: i + 1 })} delay={i * 60} eager />)}
       {near && !loading && shots.length === 0 && (
-        <p className={`${colspan} text-xs text-muted`}>{failed ? "Screenshot non disponibili in questo momento." : "Nessuno screenshot disponibile."}</p>
+        <p className={`${colspan} text-xs text-muted`}>{failed ? t("strip.failed") : t("strip.none")}</p>
       )}
     </div>
   );
@@ -40,7 +42,7 @@ function Row({ game, year, dup, onSelect }) {
       id={`game-${game.id}`}
       role="button"
       tabIndex={0}
-      aria-label={`Apri le informazioni di ${game.title}`}
+      aria-label={t("aria.openInfo", { title: game.title })}
       onClick={open}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
       onPointerDown={() => prefetchDetails(game)}

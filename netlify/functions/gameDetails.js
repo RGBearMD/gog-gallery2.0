@@ -1,5 +1,5 @@
-// GOG: screenshot (max 6) per UNO o PIÙ giochi in una sola chiamata: ?ids=1207658930,1207659026
-// -> { items: { "<id>": { screenshots: [{ thumb, full }], year: null } | null } }
+// GOG: screenshot (max 6), sviluppatori ed editore per UNO o PIÙ giochi in una sola chiamata: ?ids=1207658930,1207659026
+// -> { items: { "<id>": { screenshots: [{ thumb, full }], year: null, developers: [], publishers: [] } | null } }
 //   thumb = formato medio (lista e finestra Info) · full = grande (solo ingrandimento)
 // L'anno NON si legge qui: la release_date di GOG è la data di uscita su GOG, non quella originale del gioco
 // (es. 1998 → 2009). L'anno viene da fetchMeta, così lista e Info mostrano sempre lo stesso valore.
@@ -12,8 +12,20 @@ const pick = (shot, order) =>
 const json = (status, body, cache = "no-store") =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": cache } });
 
+const names = (list) => (Array.isArray(list) ? list.map((x) => (typeof x === "string" ? x : x?.name)).filter((n) => typeof n === "string" && n.trim()).map((n) => n.trim()).slice(0, 4) : []);
+
+// Sviluppatore ed editore stanno nell'API v2; se non risponde si mostrano comunque gli screenshot.
+async function credits(id) {
+  try {
+    const res = await fetch(`https://api.gog.com/v2/games/${id}?locale=en-US`);
+    if (!res.ok) return { developers: [], publishers: [] };
+    const e = (await res.json())?._embedded || {};
+    return { developers: names(e.developers), publishers: names(e.publisher ? [e.publisher] : e.publishers) };
+  } catch { return { developers: [], publishers: [] }; }
+}
+
 async function one(id) {
-  const res = await fetch(`https://api.gog.com/products/${id}?expand=screenshots`);
+  const [res, who] = await Promise.all([fetch(`https://api.gog.com/products/${id}?expand=screenshots`), credits(id)]);
   if (!res.ok) throw new Error(`GOG ${res.status}`);
   const data = await res.json();
   const screenshots = (data.screenshots || [])
@@ -21,7 +33,7 @@ async function one(id) {
     .filter((s) => s.thumb)
     .map((s) => ({ thumb: s.thumb, full: s.full || s.thumb }))
     .slice(0, 6);
-  return { screenshots, year: null };
+  return { screenshots, year: null, ...who };
 }
 
 export default async (req) => {

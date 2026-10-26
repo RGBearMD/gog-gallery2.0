@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
 import { Icon } from "./Icons";
 import KofiButton from "./KofiButton";
-
-const collator = new Intl.Collator("it", { sensitivity: "base", numeric: true });
+import LangToggle from "./LangToggle";
+import { useI18n } from "../i18n/context";
 
 export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, onInstall, onHome }) {
+  const { t, locale } = useI18n();
   const [q, setQ] = useState("");
-  const sorted = useMemo(() => [...games].sort((a, b) => collator.compare(a.title, b.title)), [games]); // ordine alfabetico
+  const sorted = useMemo(() => {
+    const collator = new Intl.Collator(locale, { sensitivity: "base", numeric: true });
+    return [...games].sort((a, b) => collator.compare(a.title, b.title)); // ordine alfabetico
+  }, [games, locale]);
   if (!isOpen) return null;
   const list = sorted.filter((g) => g.title.toLowerCase().includes(q.trim().toLowerCase()));
 
@@ -15,11 +19,11 @@ export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, 
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <aside className="relative z-10 flex h-full w-80 max-w-[88vw] flex-col border-r border-line/70 bg-ink animate-slide-right">
         <div className="flex items-center justify-between p-4 pb-2">
-          <h2 className="font-semibold">I tuoi giochi ({games.length})</h2>
-          <button onClick={onClose} aria-label="Chiudi menu" className="rounded-full p-1.5 text-muted hover:text-fog"><Icon name="close" /></button>
+          <h2 className="font-semibold">{t("index.title", { n: games.length })}</h2>
+          <button onClick={onClose} aria-label={t("aria.closeMenu")} className="rounded-full p-1.5 text-muted hover:text-fog"><Icon name="close" /></button>
         </div>
         <div className="px-4 pb-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca un gioco…" className="w-full rounded-lg border border-line/60 bg-panel px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-spark" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("index.search")} className="w-full rounded-lg border border-line/60 bg-panel px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-spark" />
         </div>
         <div className="custom-scrollbar flex-1 overflow-y-auto px-2 pb-2">
           {list.map((g) => (
@@ -27,17 +31,20 @@ export default function GameIndex({ games, isOpen, onClose, onPick, onDownload, 
               {g.title}
             </button>
           ))}
-          {list.length === 0 && <p className="px-3 py-4 text-sm text-muted">Nessun gioco trovato.</p>}
+          {list.length === 0 && <p className="px-3 py-4 text-sm text-muted">{t("index.none")}</p>}
         </div>
         <div className="space-y-2 border-t border-line/60 p-3">
-          {onInstall && <button onClick={onInstall} className="w-full rounded-lg bg-spark py-2.5 text-xs font-bold text-ink hover:brightness-110">Installa l'app</button>}
+          {onInstall && <button onClick={onInstall} className="w-full rounded-lg bg-spark py-2.5 text-xs font-bold text-ink hover:brightness-110">{t("install")}</button>}
           <button onClick={onDownload} className="flex w-full items-center justify-center gap-2 rounded-lg bg-raised py-2.5 text-xs font-semibold hover:bg-line">
-            <Icon name="download" className="size-4" /> Scarica lista
+            <Icon name="download" className="size-4" /> {t("index.download")}
           </button>
           <KofiButton compact />
-          <a href="#privacy" onClick={onClose} className="block text-center text-xs text-muted hover:text-fog">Privacy e trasparenza</a>
+          <div className="flex items-center justify-between gap-2">
+            <a href="#privacy" onClick={onClose} className="text-xs text-muted hover:text-fog">{t("privacyLink")}</a>
+            <LangToggle />
+          </div>
           <button onClick={onHome} className="flex w-full items-center justify-center gap-2 rounded-lg border border-line py-2.5 text-xs font-semibold hover:bg-raised">
-            <img src="/logo-sm.webp" alt="" width="30" height="26" className="h-5 w-auto" /> Torna alla home
+            <img src="/logo-sm.webp" alt="" width="30" height="26" className="h-5 w-auto" /> {t("index.home")}
           </button>
         </div>
       </aside>

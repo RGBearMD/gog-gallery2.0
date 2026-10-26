@@ -17,7 +17,7 @@ export const isLandscape = (g) => !isSteam(g) && !isEpic(g); // copertina orizzo
 export const platformName = (g) => (isEpic(g) ? "Epic" : isSteam(g) ? "Steam" : "GOG");
 export const platformClasses = (g) => (isEpic(g) ? "bg-epic/15 text-epic" : isSteam(g) ? "bg-steam/15 text-steam" : "bg-gog/15 text-gog");
 
-export const hoursPlayed = (g) => (Math.round(((g.playtime || 0) / 60) * 10) / 10).toLocaleString("it-IT");
+export const hoursPlayed = (g, locale = "it-IT") => (Math.round(((g.playtime || 0) / 60) * 10) / 10).toLocaleString(locale);
 
 // Normalizza i giochi Steam (da profilo o salvati in precedenza)
 export function normalizeSteamGame(g) {
@@ -45,11 +45,11 @@ export const storeUrl = (g) =>
 // Le richieste di più giochi vicini nel tempo vengono UNITE in una sola chiamata al server (6 Steam / 4 GOG).
 const mem = new Map();
 const inflight = new Map();
-const LS = "ygg:details:v3:";
+const LS = "ygg:details:v4:";
 const norm = (s) => (typeof s === "string" ? { thumb: s, full: s } : s);
 try {
   Object.keys(localStorage)
-    .filter((k) => /^ygg:(shots:v1|details:v2|players:v1):/.test(k))
+    .filter((k) => /^ygg:(shots:v1|details:v2|details:v3|players:v1):/.test(k))
     .forEach((k) => localStorage.removeItem(k));
 } catch { /* storage non disponibile */ }
 
@@ -91,7 +91,7 @@ function sendBatch(kind, group) {
       const { items } = await r.json();
       group.forEach((p, i) => {
         const item = items?.[ids[i]];
-        if (item) p.resolve({ shots: (item.screenshots || []).map(norm).slice(0, 6), year: item.year ?? null });
+        if (item) p.resolve({ shots: (item.screenshots || []).map(norm).slice(0, 6), year: item.year ?? null, dev: item.developers || [], pub: item.publishers || [] });
         else p.reject(new Error("dati non disponibili"));
       });
     })
@@ -112,7 +112,7 @@ function cached(key) {
 }
 
 export async function fetchDetails(game) {
-  if (isEpicOnly(game)) return { shots: [], year: null, failed: false }; // nessuna fonte di dettagli per i giochi solo-Epic
+  if (isEpicOnly(game)) return { shots: [], year: null, dev: [], pub: [], failed: false }; // nessuna fonte di dettagli per i giochi solo-Epic
   const key = String(game.id);
   const hit = cached(key);
   if (hit) return hit;
@@ -120,7 +120,7 @@ export async function fetchDetails(game) {
 
   const p = requestDetails(game)
     .then((details) => {
-      if (details.shots.length || details.year) { // non memorizzo i vuoti: potrebbe essere un errore temporaneo
+      if (details.shots.length || details.year || details.dev.length) { // non memorizzo i vuoti: potrebbe essere un errore temporaneo
         mem.set(key, details);
         try { localStorage.setItem(LS + key, JSON.stringify(details)); } catch { /* quota */ }
       }
@@ -135,7 +135,7 @@ export async function fetchDetails(game) {
 // Avvia il caricamento in anticipo (es. al tocco), così quando si apre il Modal i dati sono già pronti.
 export const prefetchDetails = (game) => { fetchDetails(game).catch(() => {}); };
 
-const NO_DETAILS = { shots: [], year: null, failed: false };
+const NO_DETAILS = { shots: [], year: null, dev: [], pub: [], failed: false };
 
 export function useGameDetails(game, enabled = true) {
   const id = game ? String(game.id) : null;
